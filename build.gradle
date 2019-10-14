@@ -140,18 +140,19 @@ publishing {
             from components.java
             artifact sourcesJar
             artifact zip
+            artifact serverzip
             pom {
                 name = 'Server Pack Mod Locator'
                 description = 'Server Pack Mod Locator'
-                url = 'https://github.com/cpw/serverpackmodlocator'
+                url = 'https://github.com/cpw/serverpacklocator'
                 scm {
-                    url = 'https://github.com/cpw/serverpackmodlocator'
-                    connection = 'scm:git:git://github.com/cpw/serverpackmodlocator.git'
-                    developerConnection = 'scm:git:git@github.com:cpw/serverpackmodlocator.git'
+                    url = 'https://github.com/cpw/serverpacklocator'
+                    connection = 'scm:git:git://github.com/cpw/serverpacklocator.git'
+                    developerConnection = 'scm:git:git@github.com:cpw/serverpacklocator.git'
                 }
                 issueManagement {
                     system = 'github'
-                    url = 'https://github.com/cpw/serverpackmodlocator/issues'
+                    url = 'https://github.com/cpw/serverpacklocator/issues'
                 }
 
                 licenses {
