@@ -1,0 +1,23 @@
+{
+  "forgeVersion": "1.14.4-28.1.15",
+  "files": [
+    {
+      "rootModId": "simpleinventorysorter",
+      "type": "file",
+      "checksum": "12345",
+      "locationData": ["invsorter-12.3.jar"]
+    },
+    {
+      "rootModId": "testy1",
+      "type": "file",
+      "checksum": "12345",
+      "locationData": ["testy1-12.3.jar"]
+    },
+    {
+      "rootModId": "testy2",
+      "type": "curse",
+      "checksum": "54321",
+      "locationData": ["54321", "12345"]
+    }
+  ]
+}
