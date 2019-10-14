@@ -48,9 +48,8 @@ public class ServerSidedPackHandler extends SidedPackHandler {
     }
 
     @Override
-    protected List<IModFile> scanMods(final IModLocator dirLocator) {
-        final List<IModFile> modList = dirLocator.scanMods();
-        serverFileManager.parseModList(modList);
+    protected List<IModFile> scanMods(List<IModFile> scannedMods) {
+        serverFileManager.parseModList(scannedMods);
         return serverFileManager.getModList();
     }
 

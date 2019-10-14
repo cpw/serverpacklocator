@@ -40,6 +40,7 @@ public class ClientSidedPackHandler extends SidedPackHandler {
         final String uuid = LaunchEnvironmentHandler.INSTANCE.getUUID();
         if (uuid == null || uuid.length() == 0) {
             // invalid UUID - probably offline mode. not supported
+            LaunchEnvironmentHandler.INSTANCE.addProgressMessage("NO UUID found. Offline mode does not work. No server mods will be downloaded");
             LOGGER.error("There was not a valid UUID present in this client launch. You are probably playing offline mode. Trivially, there is nothing for us to do.");
             return false;
         }
@@ -62,7 +63,7 @@ public class ClientSidedPackHandler extends SidedPackHandler {
     }
 
     @Override
-    protected List<IModFile> scanMods(final IModLocator dirLocator) {
+    protected List<IModFile> scanMods(List<IModFile> scannedMods) {
         boolean validList = false;
         try {
             validList = clientDownloader.waitForResult();
@@ -76,8 +77,7 @@ public class ClientSidedPackHandler extends SidedPackHandler {
         }
 
         final Set<String> manifestFileList = clientDownloader.getManifest().getFiles().stream().map(ServerManifest.ModFileData::getFileName).collect(Collectors.toSet());
-        List<IModFile> files = dirLocator.scanMods();
-        return files.stream().filter(f->manifestFileList.contains(f.getFileName())).collect(Collectors.toList());
+        return scannedMods.stream().filter(f-> manifestFileList.contains(f.getFileName())).collect(Collectors.toList());
     }
 
     @Override

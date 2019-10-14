@@ -41,4 +41,8 @@ public class LaunchEnvironmentHandler {
     Function<Path, IModLocator> getModFolderFactory() {
         return getValue(net.minecraftforge.forgespi.Environment.Keys.MODFOLDERFACTORY).orElseThrow(()->new IllegalStateException("Missing MODFOLDERFACTORY, wut?"));
     }
+
+    public void addProgressMessage(String message) {
+        getValue(net.minecraftforge.forgespi.Environment.Keys.PROGRESSMESSAGE).ifPresent(pm->pm.accept(message));
+    }
 }

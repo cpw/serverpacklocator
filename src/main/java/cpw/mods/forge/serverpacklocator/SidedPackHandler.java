@@ -42,7 +42,7 @@ public abstract class SidedPackHandler {
         return isValid;
     }
 
-    protected abstract List<IModFile> scanMods(final IModLocator dirLocator);
+    protected abstract List<IModFile> scanMods(final List<IModFile> scannedMods);
 
     public abstract void initialize(final IModLocator dirLocator);
 }

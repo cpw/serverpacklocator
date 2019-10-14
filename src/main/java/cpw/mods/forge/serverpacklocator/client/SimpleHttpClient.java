@@ -1,6 +1,7 @@
 package cpw.mods.forge.serverpacklocator.client;
 
 import cpw.mods.forge.serverpacklocator.FileChecksumValidator;
+import cpw.mods.forge.serverpacklocator.LaunchEnvironmentHandler;
 import cpw.mods.forge.serverpacklocator.ServerManifest;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
@@ -62,6 +63,7 @@ public class SimpleHttpClient {
             throw new UncheckedIOException(e);
         }
         final int inetPort = uri.getPort() > 0 ? uri.getPort() : 8443;
+        LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Connecting to server at "+uri.getHost());
         final ChannelFuture remoteConnect = new Bootstrap()
                 .group(new NioEventLoopGroup(1))
                 .channel(NioSocketChannel.class)
@@ -93,6 +95,7 @@ public class SimpleHttpClient {
         if (remoteConnect.isSuccess()) {
             final String hostName = ((InetSocketAddress) remoteConnect.channel().remoteAddress()).getHostName();
             LOGGER.debug("Connected to {}", hostName);
+            LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Connected to server at "+hostName);
             downloadChannel = remoteConnect.channel();
         } else {
             LOGGER.debug("Error occured during connection", remoteConnect.cause());
@@ -101,10 +104,12 @@ public class SimpleHttpClient {
         // Wait for channels to close
         remoteConnect.channel().closeFuture().syncUninterruptibly();
         if (!completedManifest) {
+            LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Failed to complete transaction at "+uri.getHost()+" server mods will NOT be available");
             LOGGER.error("Failed to receive successful data connection from server. Are you whitelisted?");
             return false;
         }
         LOGGER.debug("Successfully downloaded pack from server");
+        LaunchEnvironmentHandler.INSTANCE.addProgressMessage("All mods downloaded successfully from server");
         return true;
     }
 
@@ -140,6 +145,7 @@ public class SimpleHttpClient {
         final String nextFile = next.getFileName();
         channel.attr(HANDLER).set(this::receiveFile);
         LOGGER.debug("Requesting file {}", nextFile);
+        LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Requesting file "+nextFile);
         final DefaultFullHttpRequest fileHttpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/files/"+nextFile);
         fileHttpRequest.headers().set(HttpHeaderNames.ACCEPT, "application/octet-stream");
         final ChannelFuture channelFuture = channel.writeAndFlush(fileHttpRequest);
@@ -154,6 +160,7 @@ public class SimpleHttpClient {
         final ServerManifest.ModFileData modFileData = ctx.channel().attr(CURRENT_FILE).get();
         if (msg.status().code() == 200) {
             LOGGER.debug("Receiving {} of size {} for {}", msg.headers().getAsString("filename"), msg.content().readableBytes(), modFileData.getFileName());
+            LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Receiving file "+modFileData.getFileName());
             try (OutputStream os = Files.newOutputStream(outputDir.resolve(modFileData.getFileName()))) {
                 msg.content().readBytes(os, msg.content().readableBytes());
             } catch (IOException e) {
@@ -244,5 +251,6 @@ public class SimpleHttpClient {
         final Matcher matcher = errorparser.matcher(cert.getMessage());
         final String hostname = matcher.find() ? matcher.group(1) : "WEIRD ERROR MESSAGE " + cert.getMessage();
         LOGGER.debug("CERTIFICATE PROBLEM : Hostname {} does not match the server certificate", hostname);
+        LaunchEnvironmentHandler.INSTANCE.addProgressMessage("CERTIFICATE PROBLEM: the remote host does not match it's name");
     }
 }
