@@ -1,4 +1,3 @@
-#!/bin/bash
+#!/bin/sh
 
-# never remove the fml.forgeVersion argument here. Make sure it's correct for the version of forge you're running
-java -jar serverpacklocator-@version@.jar "$@"
+java -jar $(dirname $0)/serverpacklocator-@version@.jar "$@"
