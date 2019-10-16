@@ -46,6 +46,11 @@ class ClientCertificateManager {
         // Check the DN of the first certificate and make sure it matches our UUID. If not, it was issued
         // for someone else and we shouldn't use it here.
         boolean maybeCert = false;
+        if (certs.size() != 2) {
+            this.hasCertificate = false;
+            LOGGER.fatal("The certificate chain is invalid. You'll need to get them again");
+            return;
+        }
         try {
             final X500Name subjectName = (X500Name) certs.get(0).getSubjectDN();
             if (Objects.equals(subjectName.getCommonName(), uuid)) {
