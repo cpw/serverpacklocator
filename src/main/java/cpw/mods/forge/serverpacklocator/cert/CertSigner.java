@@ -114,6 +114,8 @@ public class CertSigner {
         final PKCS10 csr = new PKCS10(Base64.getDecoder().decode(derString));
         final X509Certificate cert = sign(csr, caCert.get(0), key.getPrivate());
 
-        CertificateManager.writeCertChain(()->new BufferedWriter(new OutputStreamWriter(System.out)), cert, caCert.get(0));
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(System.out))) {
+            CertificateManager.writeCertChain(() -> bufferedWriter, cert, caCert.get(0));
+        }
     }
 }
