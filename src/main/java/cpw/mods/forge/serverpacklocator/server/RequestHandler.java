@@ -54,16 +54,21 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
         if (evt instanceof SslHandshakeCompletionEvent) {
-            SslHandler sslhandler = (SslHandler) ctx.channel().pipeline().get("ssl");
-            try {
-                X500Name name = (X500Name) sslhandler.engine().getSession().getPeerCertificateChain()[0].getSubjectDN();
-                LOGGER.debug("Connection from {} @ {}", name.getCommonName(), ctx.channel().remoteAddress());
-                if (!WhitelistValidator.validate(name.getCommonName())) {
-                    LOGGER.warn("Disconnecting connection from non-whitelisted player {}", name.getCommonName());
+            if (((SslHandshakeCompletionEvent) evt).isSuccess()) {
+                SslHandler sslhandler = (SslHandler) ctx.channel().pipeline().get("ssl");
+                try {
+                    X500Name name = (X500Name) sslhandler.engine().getSession().getPeerCertificateChain()[0].getSubjectDN();
+                    LOGGER.debug("Connection from {} @ {}", name.getCommonName(), ctx.channel().remoteAddress());
+                    if (!WhitelistValidator.validate(name.getCommonName())) {
+                        LOGGER.warn("Disconnecting connection from non-whitelisted player {}", name.getCommonName());
+                        ctx.close();
+                    }
+                } catch (IOException e) {
+                    LOGGER.warn("Illegal state in connection", e);
                     ctx.close();
                 }
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+            } else {
+                LOGGER.warn("Disconnected unauthenticated peer", ((SslHandshakeCompletionEvent) evt).cause());
             }
         }
     }

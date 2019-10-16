@@ -1,42 +1,19 @@
 package cpw.mods.forge.serverpacklocator.server;
 
 import com.electronwill.nightconfig.core.file.FileConfig;
-import cpw.mods.forge.serverpacklocator.OptionalHelper;
 import cpw.mods.forge.serverpacklocator.cert.CertificateManager;
-import sun.security.x509.*;
 
-import java.io.*;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.*;
-import java.security.cert.Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 import static cpw.mods.forge.serverpacklocator.OptionalHelper.ifPresentOrElse;
 
 public class ServerCertificateManager {
-    static final SecureRandom RANDOM = new SecureRandom();
-    /**
-     * Current time minus 1 year, just in case software clock goes back due to time synchronization
-     */
-    private static final Date DEFAULT_NOT_BEFORE = new Date(System.currentTimeMillis() - 86400000L * 365);
-    /**
-     * The maximum possible value in X.509 specification: 9999-12-31 23:59:59
-     */
-    private static final Date DEFAULT_NOT_AFTER = new Date(253402300799000L);
-    private static final String CERT_PEM = "cacert.pem";
-    private static final String SECRET_KEY = "ca.key";
-
     private X509Certificate cert;
     private KeyPair keyPair;
 
