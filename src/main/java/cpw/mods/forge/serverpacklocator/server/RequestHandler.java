@@ -1,6 +1,5 @@
 package cpw.mods.forge.serverpacklocator.server;
 
-import com.google.gson.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -12,9 +11,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import sun.security.x509.X500Name;
 
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -36,7 +34,7 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     }
     private void handleGet(final ChannelHandlerContext ctx, final FullHttpRequest msg) {
         if (Objects.equals("/servermanifest.json", msg.uri())) {
-            LOGGER.error("Retreiving manifest for client");
+            LOGGER.info("Manifest request for client {}", ctx.channel().remoteAddress());
             final String s = serverSidedPackHandler.getFileManager().buildManifest();
             buildReply(ctx, msg, HttpResponseStatus.OK, "application/json", s);
         } else if (msg.uri().startsWith("/files/")) {
@@ -69,16 +67,17 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
                     ctx.close();
                 }
             } else {
-                LOGGER.warn("Disconnected unauthenticated peer", ((SslHandshakeCompletionEvent) evt).cause());
+                LOGGER.warn("Disconnected unauthenticated peer at {} : {}", ctx.channel().remoteAddress(), ((SslHandshakeCompletionEvent) evt).cause().getMessage());
             }
         }
     }
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception {
-        LOGGER.debug("Error in request handler code");
-        if (!(cause.getCause() instanceof SSLHandshakeException)) {
-            LOGGER.catching(cause.getCause());
+        if (!(cause.getCause() instanceof SSLException)) {
+            LOGGER.warn("Error in request handler code", cause);
+        } else {
+            LOGGER.trace("SSL error in handling code", cause.getCause());
         }
     }
 
