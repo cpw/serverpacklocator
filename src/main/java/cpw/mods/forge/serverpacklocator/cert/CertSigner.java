@@ -1,12 +1,11 @@
 package cpw.mods.forge.serverpacklocator.cert;
 
-import com.electronwill.nightconfig.core.file.FileConfig;
 import cpw.mods.forge.serverpacklocator.server.ServerCertificateManager;
 import sun.security.pkcs10.PKCS10;
 import sun.security.util.DerValue;
 import sun.security.x509.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,6 +16,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class CertSigner {
@@ -100,18 +100,20 @@ public class CertSigner {
         return cert;
     }
 
+    private static List<X509Certificate> caCert;
+    private static KeyPair key;
     public static void main(String... args) throws Exception {
-        String csrName = args[0];
-        String outName = args[1];
-        final Path csrPath = Paths.get(csrName);
-        final FileConfig config = FileConfig.of(Paths.get("servermods","serverpacklocator.toml"));
-        config.load();
-        config.close();
-        final ServerCertificateManager certificateManager = new ServerCertificateManager(config, Paths.get("servermods"));
-        final String derString = Files.readAllLines(csrPath, StandardCharsets.US_ASCII).stream().filter(l -> !l.startsWith("----")).collect(Collectors.joining());
+        final Path caPath = Paths.get(args[0]);
+        final Path keyPath = Paths.get(args[1]);
+        CertificateManager.loadCertificates(caPath, certs -> caCert = certs);
+        CertificateManager.loadKey(keyPath, keyPair -> key = keyPair);
+        String derString;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.US_ASCII))) {
+            derString = br.lines().filter(l -> !l.startsWith("----")).collect(Collectors.joining());
+        }
         final PKCS10 csr = new PKCS10(Base64.getDecoder().decode(derString));
-        final X509Certificate cert = sign(csr, certificateManager.getCertificate(), certificateManager.getPrivateKey());
-        CertificateManager.writeCertChain(Paths.get(outName), cert, certificateManager.getCertificate());
-        System.out.println("Signed certificate chain at "+outName);
+        final X509Certificate cert = sign(csr, caCert.get(0), key.getPrivate());
+
+        CertificateManager.writeCertChain(()->new BufferedWriter(new OutputStreamWriter(System.out)), cert, caCert.get(0));
     }
 }

@@ -169,7 +169,11 @@ public class CertificateManager {
     }
 
     public static void writeCertificates(Supplier<List<X509Certificate>> certificates, final Path outputFile) {
-        writeCertChain(outputFile, certificates.get().toArray(new Certificate[0]));
+        try (BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.US_ASCII)) {
+            writeCertChain(()->writer, certificates.get().toArray(new Certificate[0]));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public static void writeKeyPair(final Supplier<KeyPair> keyPairSupplier, final Path outPath) {
@@ -183,7 +187,7 @@ public class CertificateManager {
         }
     }
 
-    static void writeCertChain(final Path output, final java.security.cert.Certificate... certs) {
+    static void writeCertChain(final Supplier<BufferedWriter> output, final java.security.cert.Certificate... certs) {
         final Base64.Encoder mimeEncoder = Base64.getMimeEncoder(64, new byte[]{10});
         final StringBuilder certText = new StringBuilder();
         for (Certificate cert: certs) {
@@ -195,8 +199,8 @@ public class CertificateManager {
                 throw new RuntimeException(e);
             }
         }
-        try (BufferedWriter writer = Files.newBufferedWriter(output, StandardCharsets.US_ASCII)) {
-            writer.write(certText.toString());
+        try {
+            output.get().write(certText.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -43,7 +43,13 @@ public class PackLocator implements IModLocator {
                 .filter(modFile -> "serverpackutility.jar".equals(modFile.getFileName()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Something went wrong with the internal utility mod"));
-        return Stream.concat(Stream.of(packutil), serverPackLocator.scanMods(modFiles).stream()).collect(Collectors.toList());
+
+        ArrayList<IModFile> finalModList = new ArrayList<>();
+        finalModList.add(packutil);
+        if (serverPackLocator.isValid()) {
+            finalModList.addAll(serverPackLocator.scanMods(modFiles));
+        }
+        return finalModList;
     }
 
     @Override
@@ -68,14 +74,13 @@ public class PackLocator implements IModLocator {
 
     @Override
     public void initArguments(final Map<String, ?> arguments) {
-        if (!serverPackLocator.isValid()) {
-            dirLocator = Optional.empty();
-            ModAccessor.statusLine = "ServerPack: NOT loaded";
-        } else {
-            final Function<Path, IModLocator> modFileLocator = LaunchEnvironmentHandler.INSTANCE.getModFolderFactory();
-            dirLocator = Optional.of(modFileLocator.apply(serverModsPath));
+        final Function<Path, IModLocator> modFileLocator = LaunchEnvironmentHandler.INSTANCE.getModFolderFactory();
+        dirLocator = Optional.of(modFileLocator.apply(serverModsPath));
+        if (serverPackLocator.isValid()) {
             serverPackLocator.initialize(dirLocator.get());
             ModAccessor.statusLine = "ServerPack: loaded";
+        } else {
+            ModAccessor.statusLine = "ServerPack: NOT loaded";
         }
         URL url = getClass().getProtectionDomain().getCodeSource().getLocation();
         URI targetURI = LamdbaExceptionUtils.uncheck(() -> new URI("file://"+LamdbaExceptionUtils.uncheck(url::toURI).getRawSchemeSpecificPart().split("!")[0]));
