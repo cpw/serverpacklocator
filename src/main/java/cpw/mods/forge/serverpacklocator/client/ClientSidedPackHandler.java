@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ClientSidedPackHandler extends SidedPackHandler {
@@ -69,10 +68,12 @@ public class ClientSidedPackHandler extends SidedPackHandler {
             validList = clientDownloader.waitForResult();
         } catch (ExecutionException e) {
             LOGGER.error("Caught exception downloading mods from server", e);
+            invalidate();
         }
 
         if (!validList) {
             LOGGER.info("There was a problem with the connection, there will not be any server mods");
+            invalidate();
             return Collections.emptyList();
         }
 

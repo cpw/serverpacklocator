@@ -13,7 +13,7 @@ import java.util.Optional;
 public abstract class SidedPackHandler {
     private final Path serverModsDir;
     private final FileConfig packConfig;
-    private final boolean isValid;
+    private boolean isValid;
 
     protected SidedPackHandler(final Path serverModsDir) {
         this.serverModsDir = serverModsDir;
@@ -24,6 +24,10 @@ public abstract class SidedPackHandler {
         packConfig.load();
         packConfig.close();
         this.isValid = validateConfig();
+    }
+
+    protected void invalidate() {
+        this.isValid = false;
     }
 
     protected abstract boolean validateConfig();

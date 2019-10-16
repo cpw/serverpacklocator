@@ -49,6 +49,8 @@ public class PackLocator implements IModLocator {
         if (serverPackLocator.isValid()) {
             finalModList.addAll(serverPackLocator.scanMods(modFiles));
         }
+
+        ModAccessor.statusLine = "ServerPack: " + (serverPackLocator.isValid() ? "loaded" : "NOT loaded");
         return finalModList;
     }
 
@@ -78,9 +80,6 @@ public class PackLocator implements IModLocator {
         dirLocator = Optional.of(modFileLocator.apply(serverModsPath));
         if (serverPackLocator.isValid()) {
             serverPackLocator.initialize(dirLocator.get());
-            ModAccessor.statusLine = "ServerPack: loaded";
-        } else {
-            ModAccessor.statusLine = "ServerPack: NOT loaded";
         }
         URL url = getClass().getProtectionDomain().getCodeSource().getLocation();
         URI targetURI = LamdbaExceptionUtils.uncheck(() -> new URI("file://"+LamdbaExceptionUtils.uncheck(url::toURI).getRawSchemeSpecificPart().split("!")[0]));

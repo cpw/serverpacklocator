@@ -83,7 +83,7 @@ public class SimpleHttpClient {
                             sslHandler.engine().setSSLParameters(sslParameters);
                             ch.pipeline().addLast("ssl", sslHandler);
                             ch.pipeline().addLast("codec", new HttpClientCodec());
-                            ch.pipeline().addLast("aggregator", new HttpObjectAggregator(2 << 19));
+                            ch.pipeline().addLast("aggregator", new HttpObjectAggregator(Integer.MAX_VALUE));
                             ch.pipeline().addLast("responseHandler", new ChannelMessageHandler());
                         } catch (SSLException e) {
                             throw new RuntimeException(e);
