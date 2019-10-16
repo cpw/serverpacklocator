@@ -48,7 +48,12 @@ public class ServerSidedPackHandler extends SidedPackHandler {
     }
 
     @Override
-    protected List<IModFile> scanMods(List<IModFile> scannedMods) {
+    protected boolean waitForDownload() {
+        return true;
+    }
+
+    @Override
+    protected List<IModFile> processModList(List<IModFile> scannedMods) {
         serverFileManager.parseModList(scannedMods);
         return serverFileManager.getModList();
     }

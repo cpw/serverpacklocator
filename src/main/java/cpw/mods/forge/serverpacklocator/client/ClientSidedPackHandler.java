@@ -12,7 +12,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -62,23 +61,30 @@ public class ClientSidedPackHandler extends SidedPackHandler {
     }
 
     @Override
-    protected List<IModFile> scanMods(List<IModFile> scannedMods) {
-        boolean validList = false;
+    protected List<IModFile> processModList(List<IModFile> scannedMods) {
+        final Set<String> manifestFileList = clientDownloader.getManifest().getFiles()
+                .stream()
+                .map(ServerManifest.ModFileData::getFileName)
+                .collect(Collectors.toSet());
+        return scannedMods.stream()
+                .filter(f-> manifestFileList.contains(f.getFileName()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    protected boolean waitForDownload() {
+        if (!isValid()) return false;
+
         try {
-            validList = clientDownloader.waitForResult();
+            if (!clientDownloader.waitForResult()) {
+                LOGGER.info("There was a problem with the connection, there will not be any server mods");
+                return false;
+            }
         } catch (ExecutionException e) {
             LOGGER.error("Caught exception downloading mods from server", e);
-            invalidate();
+            return false;
         }
-
-        if (!validList) {
-            LOGGER.info("There was a problem with the connection, there will not be any server mods");
-            invalidate();
-            return Collections.emptyList();
-        }
-
-        final Set<String> manifestFileList = clientDownloader.getManifest().getFiles().stream().map(ServerManifest.ModFileData::getFileName).collect(Collectors.toSet());
-        return scannedMods.stream().filter(f-> manifestFileList.contains(f.getFileName())).collect(Collectors.toList());
+        return true;
     }
 
     @Override

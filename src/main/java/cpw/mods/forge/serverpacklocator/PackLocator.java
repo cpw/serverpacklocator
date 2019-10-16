@@ -7,8 +7,6 @@ import net.minecraftforge.forgespi.locating.IModLocator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.*;
@@ -16,29 +14,27 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class PackLocator implements IModLocator {
     private static final Logger LOGGER = LogManager.getLogger();
     private final Path serverModsPath;
-    private final Dist locatorSide;
     private final SidedPackHandler serverPackLocator;
-    private Optional<IModLocator> dirLocator;
+    private IModLocator dirLocator;
 
     public PackLocator() {
         LOGGER.info("Loading server pack locator. Version {}", getClass().getPackage().getImplementationVersion());
         final Path gameDir = LaunchEnvironmentHandler.INSTANCE.getGameDir();
         serverModsPath = DirHandler.createOrGetDirectory(gameDir, "servermods");
-        locatorSide = LaunchEnvironmentHandler.INSTANCE.getDist();
-        serverPackLocator = SidedPackLocator.buildFor(locatorSide, serverModsPath);
+        serverPackLocator = SidedPackLocator.buildFor(LaunchEnvironmentHandler.INSTANCE.getDist(), serverModsPath);
         if (!serverPackLocator.isValid()) {
             LOGGER.warn("The server pack locator is not in a valid state, it will not load any mods");
         }
     }
     @Override
     public List<IModFile> scanMods() {
-        final List<IModFile> modFiles = dirLocator.map(IModLocator::scanMods).orElse(Collections.emptyList());
+        boolean successfulDownload = serverPackLocator.waitForDownload();
+
+        final List<IModFile> modFiles = dirLocator.scanMods();
         final IModFile packutil = modFiles.stream()
                 .filter(modFile -> "serverpackutility.jar".equals(modFile.getFileName()))
                 .findFirst()
@@ -46,11 +42,11 @@ public class PackLocator implements IModLocator {
 
         ArrayList<IModFile> finalModList = new ArrayList<>();
         finalModList.add(packutil);
-        if (serverPackLocator.isValid()) {
-            finalModList.addAll(serverPackLocator.scanMods(modFiles));
+        if (successfulDownload) {
+            finalModList.addAll(serverPackLocator.processModList(modFiles));
         }
 
-        ModAccessor.statusLine = "ServerPack: " + (serverPackLocator.isValid() ? "loaded" : "NOT loaded");
+        ModAccessor.statusLine = "ServerPack: " + (successfulDownload ? "loaded" : "NOT loaded");
         return finalModList;
     }
 
@@ -61,26 +57,27 @@ public class PackLocator implements IModLocator {
 
     @Override
     public Path findPath(final IModFile modFile, final String... path) {
-        return dirLocator.map(dl->dl.findPath(modFile, path)).orElse(null);
+        return dirLocator.findPath(modFile, path);
     }
 
     @Override
     public void scanFile(final IModFile modFile, final Consumer<Path> pathConsumer) {
-        dirLocator.ifPresent(dl->dl.scanFile(modFile, pathConsumer));
+        dirLocator.scanFile(modFile, pathConsumer);
     }
 
     @Override
     public Optional<Manifest> findManifest(final Path file) {
-        return dirLocator.flatMap(dl -> dl.findManifest(file));
+        return dirLocator.findManifest(file);
     }
 
     @Override
     public void initArguments(final Map<String, ?> arguments) {
         final Function<Path, IModLocator> modFileLocator = LaunchEnvironmentHandler.INSTANCE.getModFolderFactory();
-        dirLocator = Optional.of(modFileLocator.apply(serverModsPath));
+        dirLocator = modFileLocator.apply(serverModsPath);
         if (serverPackLocator.isValid()) {
-            serverPackLocator.initialize(dirLocator.get());
+            serverPackLocator.initialize(dirLocator);
         }
+
         URL url = getClass().getProtectionDomain().getCodeSource().getLocation();
         URI targetURI = LamdbaExceptionUtils.uncheck(() -> new URI("file://"+LamdbaExceptionUtils.uncheck(url::toURI).getRawSchemeSpecificPart().split("!")[0]));
         final FileSystem thiszip = LamdbaExceptionUtils.uncheck(() -> FileSystems.newFileSystem(Paths.get(targetURI), getClass().getClassLoader()));
@@ -90,6 +87,6 @@ public class PackLocator implements IModLocator {
 
     @Override
     public boolean isValid(final IModFile modFile) {
-        return dirLocator.map(dl->dl.isValid(modFile)).orElse(false);
+        return dirLocator.isValid(modFile);
     }
 }
