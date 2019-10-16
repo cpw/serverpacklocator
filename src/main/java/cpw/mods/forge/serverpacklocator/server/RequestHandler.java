@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import sun.security.x509.X500Name;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -70,6 +71,14 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
             } else {
                 LOGGER.warn("Disconnected unauthenticated peer", ((SslHandshakeCompletionEvent) evt).cause());
             }
+        }
+    }
+
+    @Override
+    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception {
+        LOGGER.debug("Error in request handler code");
+        if (!(cause.getCause() instanceof SSLHandshakeException)) {
+            LOGGER.catching(cause.getCause());
         }
     }
 

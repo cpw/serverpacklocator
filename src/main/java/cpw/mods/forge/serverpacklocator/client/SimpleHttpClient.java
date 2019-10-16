@@ -238,9 +238,9 @@ public class SimpleHttpClient {
 
         @Override
         public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception {
-            LOGGER.debug("Error ON ChannelMessageHandler");
+            LOGGER.debug("Error in client");
             if (!(cause.getCause() instanceof SSLHandshakeException)) {
-                cause.printStackTrace();
+                LOGGER.catching(cause.getCause());
             }
             ctx.channel().close();
             ctx.channel().eventLoop().shutdownGracefully();
