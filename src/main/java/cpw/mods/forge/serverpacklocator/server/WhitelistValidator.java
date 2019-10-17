@@ -23,7 +23,7 @@ public class WhitelistValidator {
 
     WhitelistValidator(final Path gameDir) {
         this.whitelist = gameDir.resolve("whitelist.json");
-        Executors.newSingleThreadExecutor(SimpleHttpServer::newDaemonThread).submit(() -> LamdbaExceptionUtils.uncheck(() -> monitorWhitelist(gameDir)));
+        Executors.newSingleThreadExecutor(r -> SimpleHttpServer.newDaemonThread("ServerPack Whitelist watcher - ", r)).submit(() -> LamdbaExceptionUtils.uncheck(() -> monitorWhitelist(gameDir)));
     }
 
     private void monitorWhitelist(final Path gameDir) throws IOException, InterruptedException {
@@ -31,7 +31,7 @@ public class WhitelistValidator {
         final WatchService watchService = gameDir.getFileSystem().newWatchService();
         final WatchKey watchKey = gameDir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
         for (;;) {
-            watchService.poll();
+            watchService.take();
             final List<WatchEvent<?>> watchEvents = watchKey.pollEvents();
             watchEvents.stream()
                     .filter(e -> Objects.equals(((Path) e.context()).getFileName().toString(), "whitelist.json"))

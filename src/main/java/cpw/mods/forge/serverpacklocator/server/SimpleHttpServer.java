@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.net.ssl.SSLException;
 import java.io.UncheckedIOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Simple Http Server for serving file and manifest requests to clients.
@@ -28,8 +29,8 @@ public class SimpleHttpServer {
     private final ServerCertificateManager certificateManager;
 
     SimpleHttpServer(ServerSidedPackHandler handler) {
-        masterGroup = new NioEventLoopGroup(1, SimpleHttpServer::newDaemonThread);
-        slaveGroup = new NioEventLoopGroup(1, SimpleHttpServer::newDaemonThread);
+        masterGroup = new NioEventLoopGroup(1, (Runnable r) -> newDaemonThread("ServerPack Locator Master - ", r));
+        slaveGroup = new NioEventLoopGroup(1, (Runnable r) -> newDaemonThread("ServerPack Locator Slave - ", r));
 
         int port = handler.getConfig().getOptionalInt("server.port").orElse(8443);
         certificateManager = handler.getCertificateManager();
@@ -70,8 +71,10 @@ public class SimpleHttpServer {
         channel = bootstrap.bind(port).syncUninterruptibly();
     }
 
-    static Thread newDaemonThread(Runnable r) {
+    private static final AtomicInteger COUNT = new AtomicInteger(1);
+    static Thread newDaemonThread(final String namepattern, Runnable r) {
         Thread t = new Thread(r);
+        t.setName(namepattern +COUNT.getAndIncrement());
         t.setDaemon(true);
         return t;
     }
