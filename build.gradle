@@ -50,7 +50,7 @@ test {
     useJUnitPlatform()
 }
 
-ext.forge_version = "28.1.60"
+ext.forge_version = "28.1.61"
 
 ext.sharedManifest = manifest {
     attributes(['Class-Path': 'forge.jar',
