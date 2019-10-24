@@ -119,7 +119,7 @@ public class ServerFileManager {
         if (modFiles.size() > 1) {
             LOGGER.debug("Selecting newest by artifact version for modid {}", modListEntry.getKey());
             modFiles.sort(Comparator.<IModFile, ArtifactVersion>comparing(mf -> getModInfos(mf).get(0).getVersion()).reversed());
-            LOGGER.debug("Newest by artifact version for modid {} is {}", modListEntry.getKey(), getModInfos(modFiles.get(0)).get(0).getVersion());
+            LOGGER.debug("Newest file by artifact version for modid {} is {} ({})", modListEntry.getKey(), modFiles.get(0).getFileName(), getModInfos(modFiles.get(0)).get(0).getVersion());
         }
         return modFiles.get(0);
     }
