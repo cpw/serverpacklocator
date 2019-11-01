@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 public class CertSigner {
     private static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
-    private static final long VALIDITY_DAYS = 14L;
 
 
     public static X509Certificate sign(PKCS10 csr, X509Certificate certificate, PrivateKey signerPrivKey) throws CertificateException, IOException, InvalidKeyException, SignatureException {
@@ -35,11 +34,12 @@ public class CertSigner {
 
         /*
          * Set the certificate's validity:
-         * From now and for VALIDITY_DAYS days
+         * From now until infinity
          */
         Date firstDate = new Date();
         Date lastDate = new Date();
-        lastDate.setTime(firstDate.getTime() + VALIDITY_DAYS * 1000L * 24L * 60L * 60L);
+        // LAST POSSIBLE DATE 9999-12-31 23:59:59
+        lastDate.setTime(253402300799000L);
         CertificateValidity interval = new CertificateValidity(firstDate, lastDate);
 
         /*
