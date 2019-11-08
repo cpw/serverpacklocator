@@ -16,6 +16,7 @@ targetCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven {
         name = "forge"
         url = "http://files.minecraftforge.net/maven"
@@ -50,7 +51,7 @@ test {
     useJUnitPlatform()
 }
 
-ext.forge_version = "28.1.61"
+ext.forge_version = "28.1.87"
 
 ext.sharedManifest = manifest {
     attributes(['Class-Path': 'forge.jar',
@@ -84,7 +85,7 @@ task sourcesJar(type: Jar) {
 
 
 dependencies {
-    implementation("net.minecraftforge:forgespi:1.4.+")
+    implementation("net.minecraftforge:forgespi:1.5.+")
     implementation("cpw.mods:modlauncher:4.1.+")
     implementation("com.google.code.gson:gson:2.8.0")
     implementation("org.apache.logging.log4j:log4j-api:2.11.2")

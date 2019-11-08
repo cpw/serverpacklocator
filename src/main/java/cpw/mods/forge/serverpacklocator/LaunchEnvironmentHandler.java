@@ -5,6 +5,7 @@ import cpw.mods.modlauncher.Launcher;
 import cpw.mods.modlauncher.api.IEnvironment;
 import cpw.mods.modlauncher.api.TypesafeMap;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.forgespi.locating.IModDirectoryLocatorFactory;
 import net.minecraftforge.forgespi.locating.IModLocator;
 
 import java.nio.file.Path;
@@ -38,8 +39,8 @@ public class LaunchEnvironmentHandler {
         return getValue(net.minecraftforge.forgespi.Environment.Keys.DIST).orElse(Dist.CLIENT);
     }
 
-    Function<Path, IModLocator> getModFolderFactory() {
-        return getValue(net.minecraftforge.forgespi.Environment.Keys.MODFOLDERFACTORY).orElseThrow(()->new IllegalStateException("Missing MODFOLDERFACTORY, wut?"));
+    IModDirectoryLocatorFactory getModFolderFactory() {
+        return getValue(net.minecraftforge.forgespi.Environment.Keys.MODDIRECTORYFACTORY).orElseThrow(()->new IllegalStateException("Missing MODDIRECTORYFACTORY, wut?"));
     }
 
     public void addProgressMessage(String message) {

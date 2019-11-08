@@ -1,7 +1,7 @@
 package cpw.mods.forge.serverpacklocator;
 
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
-import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.forgespi.locating.IModDirectoryLocatorFactory;
 import net.minecraftforge.forgespi.locating.IModFile;
 import net.minecraftforge.forgespi.locating.IModLocator;
 import org.apache.logging.log4j.LogManager;
@@ -12,7 +12,6 @@ import java.net.URL;
 import java.nio.file.*;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.jar.Manifest;
 
 public class PackLocator implements IModLocator {
@@ -72,8 +71,8 @@ public class PackLocator implements IModLocator {
 
     @Override
     public void initArguments(final Map<String, ?> arguments) {
-        final Function<Path, IModLocator> modFileLocator = LaunchEnvironmentHandler.INSTANCE.getModFolderFactory();
-        dirLocator = modFileLocator.apply(serverModsPath);
+        final IModDirectoryLocatorFactory modFileLocator = LaunchEnvironmentHandler.INSTANCE.getModFolderFactory();
+        dirLocator = modFileLocator.build(serverModsPath, "serverpack");
         if (serverPackLocator.isValid()) {
             serverPackLocator.initialize(dirLocator);
         }
