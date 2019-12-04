@@ -13,6 +13,8 @@ import sun.security.x509.X500Name;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -39,6 +41,11 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
             buildReply(ctx, msg, HttpResponseStatus.OK, "application/json", s);
         } else if (msg.uri().startsWith("/files/")) {
             String fileName = msg.uri().substring(7);
+            try {
+            	fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8.name());
+            } catch (UnsupportedEncodingException e) {
+                // never going to happen
+            }
             byte[] file = serverSidedPackHandler.getFileManager().findFile(fileName);
             if (file == null) {
                 build404(ctx, msg);

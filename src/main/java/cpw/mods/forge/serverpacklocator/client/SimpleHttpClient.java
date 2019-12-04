@@ -20,9 +20,11 @@ import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -146,7 +148,14 @@ public class SimpleHttpClient {
         channel.attr(HANDLER).set(this::receiveFile);
         LOGGER.debug("Requesting file {}", nextFile);
         LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Requesting file "+nextFile);
-        final DefaultFullHttpRequest fileHttpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/files/"+nextFile);
+        String encfile = nextFile;
+        try {
+        	encfile = URLEncoder.encode(nextFile, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            // never going to happen
+        }
+        encfile = encfile.replaceAll("\\+","%20");
+        final DefaultFullHttpRequest fileHttpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/files/"+encfile);
         fileHttpRequest.headers().set(HttpHeaderNames.ACCEPT, "application/octet-stream");
         final ChannelFuture channelFuture = channel.writeAndFlush(fileHttpRequest);
         channelFuture.awaitUninterruptibly();
