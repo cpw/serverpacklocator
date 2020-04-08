@@ -1,5 +1,6 @@
 package cpw.mods.forge.serverpacklocator.server;
 
+import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,6 +14,7 @@ import sun.security.x509.X500Name;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -38,7 +40,7 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
             final String s = serverSidedPackHandler.getFileManager().buildManifest();
             buildReply(ctx, msg, HttpResponseStatus.OK, "application/json", s);
         } else if (msg.uri().startsWith("/files/")) {
-            String fileName = msg.uri().substring(7);
+            String fileName = LamdbaExceptionUtils.uncheck(()->URLDecoder.decode(msg.uri().substring(7), StandardCharsets.UTF_8.name()));
             byte[] file = serverSidedPackHandler.getFileManager().findFile(fileName);
             if (file == null) {
                 LOGGER.debug("Requested file {} not found", fileName);

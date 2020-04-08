@@ -3,6 +3,7 @@ package cpw.mods.forge.serverpacklocator.client;
 import cpw.mods.forge.serverpacklocator.FileChecksumValidator;
 import cpw.mods.forge.serverpacklocator.LaunchEnvironmentHandler;
 import cpw.mods.forge.serverpacklocator.ServerManifest;
+import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -20,10 +21,7 @@ import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -146,7 +145,11 @@ public class SimpleHttpClient {
         channel.attr(HANDLER).set(this::receiveFile);
         LOGGER.debug("Requesting file {}", nextFile);
         LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Requesting file "+nextFile);
-        final DefaultFullHttpRequest fileHttpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/files/"+nextFile);
+        // I hate handling unnecessary exceptions unnecessarily
+        final String requestUri = LamdbaExceptionUtils.rethrowFunction((f) -> URLEncoder.encode("/files/" + f, StandardCharsets.UTF_8.name()))
+                .andThen(s -> s.replaceAll("\\+", "%20"))
+                .apply(nextFile);
+        final DefaultFullHttpRequest fileHttpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, requestUri);
         fileHttpRequest.headers().set(HttpHeaderNames.ACCEPT, "application/octet-stream");
         final ChannelFuture channelFuture = channel.writeAndFlush(fileHttpRequest);
         channelFuture.awaitUninterruptibly();
