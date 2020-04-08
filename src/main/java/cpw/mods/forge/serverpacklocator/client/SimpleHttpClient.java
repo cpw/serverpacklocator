@@ -146,8 +146,9 @@ public class SimpleHttpClient {
         LOGGER.debug("Requesting file {}", nextFile);
         LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Requesting file "+nextFile);
         // I hate handling unnecessary exceptions unnecessarily
-        final String requestUri = LamdbaExceptionUtils.rethrowFunction((f) -> URLEncoder.encode("/files/" + f, StandardCharsets.UTF_8.name()))
+        final String requestUri = LamdbaExceptionUtils.rethrowFunction((String f) -> URLEncoder.encode(f, StandardCharsets.UTF_8.name()))
                 .andThen(s -> s.replaceAll("\\+", "%20"))
+                .andThen(s -> "/files/"+s)
                 .apply(nextFile);
         final DefaultFullHttpRequest fileHttpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, requestUri);
         fileHttpRequest.headers().set(HttpHeaderNames.ACCEPT, "application/octet-stream");
