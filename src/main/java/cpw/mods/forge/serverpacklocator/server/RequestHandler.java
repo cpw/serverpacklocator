@@ -41,11 +41,13 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
             String fileName = msg.uri().substring(7);
             byte[] file = serverSidedPackHandler.getFileManager().findFile(fileName);
             if (file == null) {
+                LOGGER.debug("Requested file {} not found", fileName);
                 build404(ctx, msg);
             } else {
                 buildFileReply(ctx, msg, fileName, file);
             }
         } else {
+            LOGGER.debug("Failed to understand message {}", msg);
             build404(ctx, msg);
         }
     }
