@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.*;
 import java.util.*;
@@ -18,6 +19,7 @@ import java.util.stream.Stream;
 
 public class ServerFileManager {
     private static final Logger LOGGER = LogManager.getLogger();
+    private static Map<IModFile, IModFileInfo> infos;
     private ServerManifest manifest;
     private final Path modsDir;
     private List<IModFile> modList;
@@ -26,6 +28,15 @@ public class ServerFileManager {
     ServerFileManager(ServerSidedPackHandler packHandler) {
         modsDir = packHandler.getServerModsDir();
         manifestFile = modsDir.resolve("servermanifest.json");
+    }
+
+    private static String getForgeVersion() throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+        Class fmlloader = Class.forName("net.minecraftforge.fml.loading.FMLLoader");
+        Field forge = fmlloader.getDeclaredField("forgeVersion");
+        forge.setAccessible(true);
+        Field mc = fmlloader.getDeclaredField("mcVersion");
+        mc.setAccessible(true);
+        return mc.get(null) + "-" + forge.get(null);
     }
 
     String buildManifest() {
@@ -41,8 +52,19 @@ public class ServerFileManager {
         }
     }
 
+    private static Field modInfoParser;
+    private static Method modFileParser;
     public static List<IModInfo> getModInfos(final IModFile modFile) {
-        return modFile.getModFileInfo() != null ? modFile.getModInfos() : Collections.emptyList();
+        if (modInfoParser == null) {
+            Class<?> mfClass = LamdbaExceptionUtils.uncheck(() -> Class.forName("net.minecraftforge.fml.loading.moddiscovery.ModFile"));
+            modInfoParser = LamdbaExceptionUtils.uncheck(() -> mfClass.getDeclaredField("parser"));
+            modInfoParser.setAccessible(true);
+            Class<?> mfpClass = LamdbaExceptionUtils.uncheck(() -> Class.forName("net.minecraftforge.fml.loading.moddiscovery.ModFileParser"));
+            modFileParser = Arrays.stream(mfpClass.getMethods()).filter(m -> m.getName().equals("readModList")).findAny().orElseThrow(() -> new RuntimeException("BARFY!"));
+            infos = new HashMap<>();
+        }
+        IModFileInfo info = infos.computeIfAbsent(modFile, LamdbaExceptionUtils.rethrowFunction(junk->(IModFileInfo)modFileParser.invoke(null, modFile, modInfoParser.get(modFile))));
+        return info.getMods();
     }
 
     void parseModList(final List<IModFile> modList) {
@@ -89,7 +111,7 @@ public class ServerFileManager {
                 .map(ServerManifest.ModFileData::new)
                 .collect(Collectors.toList());
         manifest.addAll(modFileDataList);
-        manifest.setForgeVersion("1.14.4-28.1.45");
+        manifest.setForgeVersion(LamdbaExceptionUtils.uncheck(ServerFileManager::getForgeVersion));
         this.manifest = manifest;
         this.manifest.save(this.manifestFile);
         this.modList = Stream.concat(nonModFileData.stream(), modFileDataList.stream())
