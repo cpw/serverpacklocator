@@ -1,10 +1,5 @@
 package cpw.mods.forge.serverpacklocator.server;
 
-import com.electronwill.nightconfig.core.file.FileConfig;
-import com.electronwill.nightconfig.core.file.FileConfigBuilder;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import cpw.mods.forge.serverpacklocator.DirHandler;
 import cpw.mods.forge.serverpacklocator.ServerManifest;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraftforge.forgespi.language.IModFileInfo;
@@ -15,23 +10,18 @@ import org.apache.logging.log4j.Logger;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.*;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ServerFileManager {
     private static final Logger LOGGER = LogManager.getLogger();
-    private static Method modInfos;
-    private static Map<IModFile, IModFileInfo> infos;
     private ServerManifest manifest;
     private final Path modsDir;
     private List<IModFile> modList;
-    private Path manifestFile;
+    private final Path manifestFile;
 
     ServerFileManager(ServerSidedPackHandler packHandler) {
         modsDir = packHandler.getServerModsDir();
@@ -52,14 +42,7 @@ public class ServerFileManager {
     }
 
     public static List<IModInfo> getModInfos(final IModFile modFile) {
-        if (modInfos == null) {
-            Class<?> clazz = LamdbaExceptionUtils.uncheck(() -> Class.forName("net.minecraftforge.fml.loading.moddiscovery.ModFileParser"));
-            Class<?> mfClass = LamdbaExceptionUtils.uncheck(() -> Class.forName("net.minecraftforge.fml.loading.moddiscovery.ModFile"));
-            modInfos = LamdbaExceptionUtils.uncheck(() -> clazz.getMethod("readModList", mfClass));
-            infos = new HashMap<>();
-        }
-        IModFileInfo info = infos.computeIfAbsent(modFile, LamdbaExceptionUtils.rethrowFunction(junk->(IModFileInfo)modInfos.invoke(null, modFile)));
-        return info.getMods();
+        return modFile.getModInfos();
     }
 
     void parseModList(final List<IModFile> modList) {
