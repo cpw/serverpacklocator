@@ -42,7 +42,7 @@ public class ServerFileManager {
     }
 
     public static List<IModInfo> getModInfos(final IModFile modFile) {
-        return modFile.getModInfos();
+        return modFile.getModFileInfo() != null ? modFile.getModInfos() : Collections.emptyList();
     }
 
     void parseModList(final List<IModFile> modList) {
