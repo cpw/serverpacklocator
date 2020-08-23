@@ -138,6 +138,10 @@ public class CertificateManager {
             info.set(X509CertInfo.KEY, new CertificateX509Key(keypair.getPublic()));
             info.set(X509CertInfo.ALGORITHM_ID,
                     new CertificateAlgorithmId(new AlgorithmId(AlgorithmId.sha1WithRSAEncryption_oid)));
+            
+            CertificateExtensions extensions = new CertificateExtensions();
+            extensions.set(BasicConstraintsExtension.NAME, new BasicConstraintsExtension(true, 0));
+            info.set(X509CertInfo.EXTENSIONS, extensions);
 
             // Sign the cert to identify the algorithm that's used.
             cert = new X509CertImpl(info);
