@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -23,7 +24,8 @@ public class WhitelistValidator {
 
     WhitelistValidator(final Path gameDir) {
         this.whitelist = gameDir.resolve("whitelist.json");
-        Executors.newSingleThreadExecutor(r -> SimpleHttpServer.newDaemonThread("ServerPack Whitelist watcher - ", r)).submit(() -> LamdbaExceptionUtils.uncheck(() -> monitorWhitelist(gameDir)));
+        final ExecutorService executorService = Executors.newSingleThreadExecutor(r -> SimpleHttpServer.newDaemonThread("ServerPack Whitelist watcher - ", r));
+        executorService.submit(() -> LamdbaExceptionUtils.uncheck(() -> monitorWhitelist(gameDir)));
     }
 
     private void monitorWhitelist(final Path gameDir) throws IOException, InterruptedException {
@@ -31,13 +33,23 @@ public class WhitelistValidator {
         final WatchService watchService = gameDir.getFileSystem().newWatchService();
         final WatchKey watchKey = gameDir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
         for (;;) {
-            watchService.take();
-            final List<WatchEvent<?>> watchEvents = watchKey.pollEvents();
-            watchEvents.stream()
-                    .filter(e -> Objects.equals(((Path) e.context()).getFileName().toString(), "whitelist.json"))
-                    .findAny()
-                    .ifPresent(e -> updateWhiteList());
-            watchKey.reset();
+            try {
+                watchService.take();
+                final List<WatchEvent<?>> watchEvents = watchKey.pollEvents();
+                watchEvents.stream()
+                        .filter(e -> Objects.equals(((Path) e.context()).getFileName().toString(), "whitelist.json"))
+                        .findAny()
+                        .ifPresent(e -> updateWhiteList());
+                watchKey.reset();
+            } catch (InterruptedException ie) {
+                // Let the interruption break us out
+                LOGGER.info("Breaking out of loop due to interruption", ie);
+                Thread.interrupted();
+                break;
+            } catch (Throwable e) {
+                LOGGER.warn("Caught unexpected whitelist monitoring exception", e);
+                break;
+            }
         }
     }
 
