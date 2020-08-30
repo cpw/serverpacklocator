@@ -66,6 +66,7 @@ public class WhitelistValidator {
     private void updateWhiteList() {
         try (BufferedReader br = Files.newBufferedReader(this.whitelist)) {
             LOGGER.debug("Detected whitelist change, reloading");
+            Thread.sleep(1000);
             JsonArray array = new JsonParser().parse(br).getAsJsonArray();
             final Set<String> uuidSet = StreamSupport.stream(array.spliterator(), false)
                     .map(JsonElement::getAsJsonObject)
@@ -75,7 +76,7 @@ public class WhitelistValidator {
                     .collect(Collectors.toSet());
             LOGGER.debug("Found whitelisted UUIDs : {}", uuidSet);
             setValidator(uuidSet::contains);
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             LOGGER.debug("Failed to reload whitelist", e);
         }
 
