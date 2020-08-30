@@ -76,7 +76,7 @@ public class WhitelistValidator {
             LOGGER.debug("Found whitelisted UUIDs : {}", uuidSet);
             setValidator(uuidSet::contains);
         } catch (IOException e) {
-            // IGNORE
+            LOGGER.debug("Failed to reload whitelist", e);
         }
 
     }
