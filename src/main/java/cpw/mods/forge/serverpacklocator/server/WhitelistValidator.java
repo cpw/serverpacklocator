@@ -28,7 +28,7 @@ public class WhitelistValidator {
         executorService.submit(() -> LamdbaExceptionUtils.uncheck(() -> monitorWhitelist(gameDir)));
     }
 
-    private void monitorWhitelist(final Path gameDir) throws IOException, InterruptedException {
+    private void monitorWhitelist(final Path gameDir) throws IOException {
         updateWhiteList();
         final WatchService watchService = gameDir.getFileSystem().newWatchService();
         final WatchKey watchKey = gameDir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
