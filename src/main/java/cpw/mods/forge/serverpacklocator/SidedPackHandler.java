@@ -13,6 +13,8 @@ public abstract class SidedPackHandler {
     private final Path serverModsDir;
     private final FileConfig packConfig;
     private boolean isValid;
+    private String forgeVersion = "UNKNOWN";
+    private String mcVersion = "UNKNOWN";
 
     protected SidedPackHandler(final Path serverModsDir) {
         this.serverModsDir = serverModsDir;
@@ -47,4 +49,24 @@ public abstract class SidedPackHandler {
     public abstract void initialize(final IModLocator dirLocator);
 
     protected abstract boolean waitForDownload();
+
+    public String getForgeVersion()
+    {
+        return forgeVersion;
+    }
+
+    public void setForgeVersion(final String forgeVersion)
+    {
+        this.forgeVersion = forgeVersion;
+    }
+
+    public String getMcVersion()
+    {
+        return mcVersion;
+    }
+
+    public void setMcVersion(final String mcVersion)
+    {
+        this.mcVersion = mcVersion;
+    }
 }

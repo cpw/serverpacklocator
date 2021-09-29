@@ -24,19 +24,17 @@ public class ServerFileManager {
     private final Path modsDir;
     private List<IModFile> modList;
     private final Path manifestFile;
+    private final ServerSidedPackHandler serverSidedPackHandler;
 
     ServerFileManager(ServerSidedPackHandler packHandler) {
         modsDir = packHandler.getServerModsDir();
         manifestFile = modsDir.resolve("servermanifest.json");
+        this.serverSidedPackHandler = packHandler;
     }
 
-    private static String getForgeVersion() throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
-        Class<?> fmlloader = Class.forName("net.minecraftforge.fml.loading.FMLLoader");
-        Field forge = fmlloader.getDeclaredField("forgeVersion");
-        forge.setAccessible(true);
-        Field mc = fmlloader.getDeclaredField("mcVersion");
-        mc.setAccessible(true);
-        return mc.get(null) + "-" + forge.get(null);
+    private String getForgeVersion()
+    {
+        return serverSidedPackHandler.getMcVersion() + "-" + serverSidedPackHandler.getForgeVersion();
     }
 
     String buildManifest() {
@@ -111,7 +109,7 @@ public class ServerFileManager {
                 .map(ServerManifest.ModFileData::new)
                 .collect(Collectors.toList());
         manifest.addAll(modFileDataList);
-        manifest.setForgeVersion(LamdbaExceptionUtils.uncheck(ServerFileManager::getForgeVersion));
+        manifest.setForgeVersion(LamdbaExceptionUtils.uncheck(this::getForgeVersion));
         this.manifest = manifest;
         this.manifest.save(this.manifestFile);
         this.modList = Stream.concat(nonModFileData.stream(), modFileDataList.stream())

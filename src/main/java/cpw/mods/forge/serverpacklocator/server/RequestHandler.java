@@ -28,15 +28,14 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
         try
         {
-            MessageDigest md = MessageDigest.getInstance("MD5");
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(password.getBytes());
             byte[] digest = md.digest();
             StringBuilder sb = new StringBuilder();
             for (byte b : digest) {
                 sb.append(Integer.toHexString(b & 0xff));
             }
-            String base64 = new String(Base64.encodeBase64(sb.toString().getBytes()));
-            this.passwordHash = base64.toUpperCase(Locale.ROOT);
+            this.passwordHash = sb.toString().toUpperCase(Locale.ROOT);
         }
         catch (NoSuchAlgorithmException e)
         {

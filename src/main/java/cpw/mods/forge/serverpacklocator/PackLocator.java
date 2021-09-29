@@ -64,12 +64,20 @@ public class PackLocator implements IModLocator {
     public void initArguments(final Map<String, ?> arguments) {
         final IModDirectoryLocatorFactory modFileLocator = LaunchEnvironmentHandler.INSTANCE.getModFolderFactory();
         dirLocator = modFileLocator.build(serverModsPath, "serverpack");
+
+        serverPackLocator.setForgeVersion((String)arguments.get("forgeVersion"));
+        serverPackLocator.setMcVersion((String)arguments.get("mcVersion"));
+
         if (serverPackLocator.isValid()) {
             serverPackLocator.initialize(dirLocator);
         }
 
         URL url = getClass().getProtectionDomain().getCodeSource().getLocation();
-        URI targetURI = LamdbaExceptionUtils.uncheck(() -> new URI("file://"+LamdbaExceptionUtils.uncheck(url::toURI).getRawSchemeSpecificPart().split("!")[0]));
+
+        LOGGER.info("Loading server pack locator from: " + url.toString());
+        URI targetURI = LamdbaExceptionUtils.uncheck(() -> new URI("file://"+LamdbaExceptionUtils.uncheck(url::toURI).getRawSchemeSpecificPart().split("!")[0].split("\\.jar")[0] + ".jar"));
+
+        LOGGER.info("Unpacking utility mod from: " + targetURI.toString());
         final FileSystem thiszip = LamdbaExceptionUtils.uncheck(() -> FileSystems.newFileSystem(Paths.get(targetURI), getClass().getClassLoader()));
         final Path utilModPath = thiszip.getPath("utilmod", "serverpackutility.jar");
         LamdbaExceptionUtils.uncheck(()->Files.copy(utilModPath, serverModsPath.resolve("serverpackutility.jar"), StandardCopyOption.REPLACE_EXISTING));

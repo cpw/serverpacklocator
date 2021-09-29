@@ -1,0 +1,14 @@
+modLoader="javafml" #mandatory
+loaderVersion="[28,)" #mandatory (28 is current forge version)
+license="LGPL v3"
+[[mods]] #mandatory
+modId="serverpacklocatorutility" #mandatory
+version="${file.jarVersion}" #mandatory
+displayName="Server Pack Locator Utility mod" #mandatory
+credits="cpw" #optional
+authors="cpw" #optional
+description='''
+Server Pack Locator Utility mod.
+
+This mod is distributed as part of the ServerPackLocator to allow interaction with the game.
+'''

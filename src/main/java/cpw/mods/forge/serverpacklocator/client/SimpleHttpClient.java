@@ -6,7 +6,6 @@ import cpw.mods.forge.serverpacklocator.ServerManifest;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.codehaus.plexus.util.Base64;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -41,15 +40,14 @@ public class SimpleHttpClient {
 
         try
         {
-            MessageDigest md = MessageDigest.getInstance("MD5");
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(password.getBytes());
             byte[] digest = md.digest();
             StringBuilder sb = new StringBuilder();
             for (byte b : digest) {
                 sb.append(Integer.toHexString(b & 0xff));
             }
-            String base64 = new String(Base64.encodeBase64(sb.toString().getBytes()));
-            this.passwordHash = base64.toUpperCase(Locale.ROOT);
+            this.passwordHash = sb.toString().toUpperCase(Locale.ROOT);
         }
         catch (NoSuchAlgorithmException e)
         {
@@ -63,7 +61,7 @@ public class SimpleHttpClient {
     private boolean connectAndDownload(final String server) {
         try {
             downloadManifest(server);
-            downloadNextFile();
+            downloadNextFile(server);
             return true;
         } catch (Exception ex) {
             LOGGER.error("Failed to download modpack from server: " + server, ex);
@@ -91,19 +89,19 @@ public class SimpleHttpClient {
         buildFileFetcher();
     }
 
-    private void downloadFile(final ServerManifest.ModFileData next) throws IOException
+    private void downloadFile(final String server, final ServerManifest.ModFileData next) throws IOException
     {
         final String existingChecksum = FileChecksumValidator.computeChecksumFor(outputDir.resolve(next.getFileName()));
         if (Objects.equals(next.getChecksum(), existingChecksum)) {
             LOGGER.debug("Found existing file {} - skipping", next.getFileName());
-            downloadNextFile();
+            downloadNextFile(server);
             return;
         }
 
         final String nextFile = next.getFileName();
         LOGGER.debug("Requesting file {}", nextFile);
         LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Requesting file "+nextFile);
-        final String requestUri = LamdbaExceptionUtils.rethrowFunction((String f) -> URLEncoder.encode(f, StandardCharsets.UTF_8.name()))
+        final String requestUri = server + LamdbaExceptionUtils.rethrowFunction((String f) -> URLEncoder.encode(f, StandardCharsets.UTF_8.name()))
           .andThen(s -> s.replaceAll("\\+", "%20"))
           .andThen(s -> "/files/"+s)
           .apply(nextFile);
@@ -138,17 +136,17 @@ public class SimpleHttpClient {
                 time = System.nanoTime();
             }
 
-            downloadNextFile();
+            downloadNextFile(server);
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to download file: " + nextFile, ex);
         }
     }
 
-    private void downloadNextFile() throws IOException
+    private void downloadNextFile(final String server) throws IOException
     {
         final Iterator<ServerManifest.ModFileData> fileDataIterator = fileDownloaderIterator;
         if (fileDataIterator.hasNext()) {
-            downloadFile(fileDataIterator.next());
+            downloadFile(server, fileDataIterator.next());
         } else {
             LOGGER.debug("Finished downloading closing channel");
         }
