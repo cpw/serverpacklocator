@@ -10,9 +10,10 @@ import org.apache.logging.log4j.Logger;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
-import java.util.jar.Manifest;
 
 public class PackLocator implements IModLocator {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -55,18 +56,8 @@ public class PackLocator implements IModLocator {
     }
 
     @Override
-    public Path findPath(final IModFile modFile, final String... path) {
-        return dirLocator.findPath(modFile, path);
-    }
-
-    @Override
     public void scanFile(final IModFile modFile, final Consumer<Path> pathConsumer) {
         dirLocator.scanFile(modFile, pathConsumer);
-    }
-
-    @Override
-    public Optional<Manifest> findManifest(final Path file) {
-        return dirLocator.findManifest(file);
     }
 
     @Override

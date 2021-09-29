@@ -11,16 +11,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.OptionalInt;
-import java.util.function.Predicate;
 
-public class ServerSidedPackHandler extends SidedPackHandler {
+public class ServerSidedPackHandler extends SidedPackHandler
+{
     private static final Logger LOGGER = LogManager.getLogger();
-    private ServerCertificateManager certManager;
-    private SimpleHttpServer simpleHttpServer;
     private ServerFileManager serverFileManager;
-    private WhitelistValidator whitelistMonitor;
 
     public ServerSidedPackHandler(final Path serverModsDir) {
         super(serverModsDir);
@@ -28,13 +25,9 @@ public class ServerSidedPackHandler extends SidedPackHandler {
 
     @Override
     protected boolean validateConfig() {
-        final Optional<String> certificate = getConfig().getOptional("server.cacertificate");
-        final Optional<String> key = getConfig().getOptional("server.cakey");
-        final Optional<String> servername = getConfig().getOptional("server.name");
         final OptionalInt port = getConfig().getOptionalInt("server.port");
 
-        if (certificate.isPresent() && key.isPresent() && servername.isPresent() && port.isPresent()) {
-            this.certManager = new ServerCertificateManager(getConfig(), getServerModsDir());
+        if (port.isPresent()) {
             return true;
         } else {
             LOGGER.fatal("Invalid configuration file found: {}, please delete or correct before trying again", getConfig().getNioPath());
@@ -44,7 +37,7 @@ public class ServerSidedPackHandler extends SidedPackHandler {
 
     @Override
     protected boolean handleMissing(final Path path, final ConfigFormat<?> configFormat) throws IOException {
-        Files.copy(getClass().getResourceAsStream("/defaultserverconfig.toml"), path);
+        Files.copy(Objects.requireNonNull(getClass().getResourceAsStream("/defaultserverconfig.toml")), path);
         return true;
     }
 
@@ -61,13 +54,10 @@ public class ServerSidedPackHandler extends SidedPackHandler {
 
     @Override
     public void initialize(final IModLocator dirLocator) {
-        simpleHttpServer = new SimpleHttpServer(this);
         serverFileManager = new ServerFileManager(this);
-        whitelistMonitor = new WhitelistValidator(getServerModsDir().getParent());
-    }
 
-    public ServerCertificateManager getCertificateManager() {
-        return certManager;
+        SimpleHttpServer.run(this);
+        WhitelistValidator.setup(getServerModsDir().getParent());
     }
 
     public ServerFileManager getFileManager() {

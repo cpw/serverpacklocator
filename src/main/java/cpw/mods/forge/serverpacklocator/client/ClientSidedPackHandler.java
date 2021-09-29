@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -20,7 +21,6 @@ import java.util.stream.Collectors;
 
 public class ClientSidedPackHandler extends SidedPackHandler {
     private static final Logger LOGGER = LogManager.getLogger();
-    private ClientCertificateManager certManager;
     private SimpleHttpClient clientDownloader;
 
     public ClientSidedPackHandler(final Path serverModsDir) {
@@ -29,7 +29,7 @@ public class ClientSidedPackHandler extends SidedPackHandler {
 
     @Override
     protected boolean handleMissing(final Path path, final ConfigFormat<?> configFormat) throws IOException {
-        Files.copy(getClass().getResourceAsStream("/defaultclientconfig.toml"), path);
+        Files.copy(Objects.requireNonNull(getClass().getResourceAsStream("/defaultclientconfig.toml")), path);
         return true;
     }
 
@@ -42,22 +42,15 @@ public class ClientSidedPackHandler extends SidedPackHandler {
             LOGGER.error("There was not a valid UUID present in this client launch. You are probably playing offline mode. Trivially, there is nothing for us to do.");
             return false;
         }
-        final Optional<String> certificate = getConfig().getOptional("client.certificate");
-        final Optional<String> key = getConfig().getOptional("client.key");
         final Optional<String> remoteServer = getConfig().getOptional("client.remoteServer");
 
-        if (certificate.isPresent() && key.isPresent() && remoteServer.isPresent()) {
-            this.certManager = new ClientCertificateManager(getConfig(), getServerModsDir(), uuid);
-            return this.certManager.isValid();
+        if (remoteServer.isPresent()) {
+            return true;
         } else {
             LOGGER.fatal("Invalid configuration file {} found. Could not locate valid values. " +
                     "Repair or delete this file to continue", getConfig().getNioPath().toString());
             throw new IllegalStateException("Invalid configuation file found, please delete or correct");
         }
-    }
-
-    ClientCertificateManager getCertificateManager() {
-        return certManager;
     }
 
     @Override
@@ -89,6 +82,7 @@ public class ClientSidedPackHandler extends SidedPackHandler {
 
     @Override
     public void initialize(final IModLocator dirLocator) {
-        clientDownloader = new SimpleHttpClient(this);
+        final String uuid = LaunchEnvironmentHandler.INSTANCE.getUUID();
+        clientDownloader = new SimpleHttpClient(this, uuid);
     }
 }

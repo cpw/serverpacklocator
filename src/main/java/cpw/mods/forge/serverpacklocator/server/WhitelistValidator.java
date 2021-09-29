@@ -20,15 +20,15 @@ import java.util.stream.StreamSupport;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class WhitelistValidator {
     private static final Logger LOGGER = LogManager.getLogger();
-    private final Path whitelist;
+    private static Path whitelist;
 
-    WhitelistValidator(final Path gameDir) {
-        this.whitelist = gameDir.resolve("whitelist.json");
+    public static void setup(final Path gameDir) {
+        whitelist = gameDir.resolve("whitelist.json");
         final ExecutorService executorService = Executors.newSingleThreadExecutor(r -> SimpleHttpServer.newDaemonThread("ServerPack Whitelist watcher - ", r));
         executorService.submit(() -> LamdbaExceptionUtils.uncheck(() -> monitorWhitelist(gameDir)));
     }
 
-    private void monitorWhitelist(final Path gameDir) throws IOException {
+    private static void monitorWhitelist(final Path gameDir) throws IOException {
         updateWhiteList();
         final WatchService watchService = gameDir.getFileSystem().newWatchService();
         final WatchKey watchKey = gameDir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
@@ -63,8 +63,8 @@ public class WhitelistValidator {
         validator = Optional.of(uuidTester);
     }
 
-    private void updateWhiteList() {
-        try (BufferedReader br = Files.newBufferedReader(this.whitelist)) {
+    private static void updateWhiteList() {
+        try (BufferedReader br = Files.newBufferedReader(whitelist)) {
             LOGGER.debug("Detected whitelist change, reloading");
             Thread.sleep(1000);
             JsonArray array = new JsonParser().parse(br).getAsJsonArray();

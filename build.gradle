@@ -4,22 +4,20 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.22.0'
 }
 
-apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 apply plugin: 'java-library'
 
 group 'cpw.mods.forge'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 
 repositories {
     mavenCentral()
     mavenLocal()
     maven {
         name = "forge"
-        url = "http://files.minecraftforge.net/maven"
+        url = "https://files.minecraftforge.net/maven"
     }
 }
 
@@ -51,12 +49,12 @@ test {
     useJUnitPlatform()
 }
 
-ext.forge_version = "28.1.87"
+ext.forge_version = "37.0.71"
 
 ext.sharedManifest = manifest {
     attributes(['Class-Path': 'forge.jar',
      'Main-Class': 'net.minecraftforge.server.ServerMain',
-     'ServerLaunchArgs': "--gameDir . --launchTarget fmlserver --fml.forgeVersion ${forge_version} --fml.mcpVersion 20190829.143755 --fml.mcVersion 1.14.4 --fml.forgeGroup net.minecraftforge"
+     'ServerLaunchArgs': "--gameDir . --launchTarget fmlserver --fml.forgeVersion ${forge_version} --fml.mcpVersion 20210706.113038 --fml.mcVersion 1.17.1 --fml.forgeGroup net.minecraftforge"
     ],
     )
     attributes(
@@ -85,8 +83,8 @@ task sourcesJar(type: Jar) {
 
 
 dependencies {
-    implementation("net.minecraftforge:forgespi:2.1.+")
-    implementation("cpw.mods:modlauncher:6.1.+")
+    implementation("net.minecraftforge:forgespi:4.0.9")
+    implementation("cpw.mods:modlauncher:9.0.7")
     implementation("com.google.code.gson:gson:2.8.0")
     implementation("org.apache.logging.log4j:log4j-api:2.11.2")
     implementation("io.netty:netty-all:4.1.25.Final")
@@ -131,8 +129,6 @@ artifacts {
 
 compileJava {
     options.compilerArgs << "-XDignore.symbol.file"
-    options.fork = true
-    options.forkOptions.executable = 'javac'
 }
 
 publishing {

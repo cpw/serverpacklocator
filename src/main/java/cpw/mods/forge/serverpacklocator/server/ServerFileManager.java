@@ -31,7 +31,7 @@ public class ServerFileManager {
     }
 
     private static String getForgeVersion() throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
-        Class fmlloader = Class.forName("net.minecraftforge.fml.loading.FMLLoader");
+        Class<?> fmlloader = Class.forName("net.minecraftforge.fml.loading.FMLLoader");
         Field forge = fmlloader.getDeclaredField("forgeVersion");
         forge.setAccessible(true);
         Field mc = fmlloader.getDeclaredField("mcVersion");

@@ -6,14 +6,10 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import sun.security.x509.X500Name;
 
 import javax.net.ssl.SSLException;
-import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -35,6 +31,19 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         }
     }
     private void handleGet(final ChannelHandlerContext ctx, final FullHttpRequest msg) {
+        if (!msg.headers().contains("player-id")) {
+            LOGGER.warn("Received unauthenticated request.");
+            build404(ctx, msg);
+            return;
+        }
+
+        var playerId = msg.headers().get("player-id");
+        if (!WhitelistValidator.validate(playerId)) {
+            LOGGER.warn("Received unauthorized request.");
+            build404(ctx, msg);
+            return;
+        }
+
         if (Objects.equals("/servermanifest.json", msg.uri())) {
             LOGGER.info("Manifest request for client {}", ctx.channel().remoteAddress());
             final String s = serverSidedPackHandler.getFileManager().buildManifest();
@@ -51,28 +60,6 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         } else {
             LOGGER.debug("Failed to understand message {}", msg);
             build404(ctx, msg);
-        }
-    }
-
-    @Override
-    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
-        if (evt instanceof SslHandshakeCompletionEvent) {
-            if (((SslHandshakeCompletionEvent) evt).isSuccess()) {
-                SslHandler sslhandler = (SslHandler) ctx.channel().pipeline().get("ssl");
-                try {
-                    X500Name name = (X500Name) sslhandler.engine().getSession().getPeerCertificateChain()[0].getSubjectDN();
-                    LOGGER.debug("Connection from {} @ {}", name.getCommonName(), ctx.channel().remoteAddress());
-                    if (!WhitelistValidator.validate(name.getCommonName())) {
-                        LOGGER.warn("Disconnecting connection from non-whitelisted player {}", name.getCommonName());
-                        ctx.close();
-                    }
-                } catch (IOException e) {
-                    LOGGER.warn("Illegal state in connection", e);
-                    ctx.close();
-                }
-            } else {
-                LOGGER.warn("Disconnected unauthenticated peer at {} : {}", ctx.channel().remoteAddress(), ((SslHandshakeCompletionEvent) evt).cause().getMessage());
-            }
         }
     }
 

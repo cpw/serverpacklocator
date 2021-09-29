@@ -7,10 +7,7 @@ import net.minecraftforge.forgespi.locating.IModFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -22,8 +19,8 @@ public class ServerManifest {
     private String forgeVersion;
     private List<ModFileData> files = new ArrayList<>();
 
-    public static ServerManifest loadFromString(final String json) {
-        return GSON.fromJson(json, ServerManifest.class);
+    public static ServerManifest loadFromStream(final InputStream stream) {
+        return GSON.fromJson(new InputStreamReader(stream), ServerManifest.class);
     }
 
     public String getForgeVersion() {

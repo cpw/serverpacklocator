@@ -1,10 +1,3 @@
 [server]
-# Enter the name of the server as resolved by DNS. This will be used by clients to connect, and will be asserted
-# as valid by client certificates
-name = "testforgecraftserver.com"
 # Enter a port to listen on. This will be serving public HTTP requests.
 port = 8080
-# Path to store the CA certificate we will generate
-cacertificate = "cacert.pem"
-# Path to store the CA private key we will generate
-cakey = "ca.key"
