@@ -6,6 +6,7 @@ import cpw.mods.forge.serverpacklocator.ServerManifest;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.plexus.util.Base64;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -17,7 +18,10 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -30,11 +34,28 @@ public class SimpleHttpClient {
     private ServerManifest serverManifest;
     private Iterator<ServerManifest.ModFileData> fileDownloaderIterator;
     private final Future<Boolean> downloadJob;
-    private final String playerId;
+    private final String          passwordHash;
 
-    public SimpleHttpClient(final ClientSidedPackHandler packHandler, final String uuid) {
+    public SimpleHttpClient(final ClientSidedPackHandler packHandler, final String password) {
         this.outputDir = packHandler.getServerModsDir();
-        this.playerId = uuid;
+
+        try
+        {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(password.getBytes());
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(Integer.toHexString(b & 0xff));
+            }
+            String base64 = new String(Base64.encodeBase64(sb.toString().getBytes()));
+            this.passwordHash = base64.toUpperCase(Locale.ROOT);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new IllegalStateException("Missing MD5 hashing algorithm", e);
+        }
+
         final Optional<String> remoteServer = packHandler.getConfig().getOptional("client.remoteServer");
         downloadJob = Executors.newSingleThreadExecutor().submit(() -> remoteServer.map(this::connectAndDownload).orElse(false));
     }
@@ -59,7 +80,7 @@ public class SimpleHttpClient {
 
         var url = new URL(address);
         var connection = url.openConnection();
-        connection.setRequestProperty("player-id", this.playerId);
+        connection.setRequestProperty("Authentication", this.passwordHash);
 
         try (BufferedInputStream in = new BufferedInputStream(connection.getInputStream())) {
             this.serverManifest = ServerManifest.loadFromStream(in);
@@ -90,7 +111,7 @@ public class SimpleHttpClient {
         try
         {
             URLConnection connection = new URL(requestUri).openConnection();
-            connection.setRequestProperty("player-id", this.playerId);
+            connection.setRequestProperty("Authentication", this.passwordHash);
 
             File file = outputDir.resolve(next.getFileName()).toFile();
 

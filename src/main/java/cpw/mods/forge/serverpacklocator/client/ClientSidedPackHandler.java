@@ -43,6 +43,7 @@ public class ClientSidedPackHandler extends SidedPackHandler {
             return false;
         }
         final Optional<String> remoteServer = getConfig().getOptional("client.remoteServer");
+        final Optional<String> password = getConfig().getOptional("client.password");
 
         if (remoteServer.isPresent()) {
             return true;
@@ -82,7 +83,6 @@ public class ClientSidedPackHandler extends SidedPackHandler {
 
     @Override
     public void initialize(final IModLocator dirLocator) {
-        final String uuid = LaunchEnvironmentHandler.INSTANCE.getUUID();
-        clientDownloader = new SimpleHttpClient(this, uuid);
+        clientDownloader = new SimpleHttpClient(this, getConfig().get("client.password"));
     }
 }

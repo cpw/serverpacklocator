@@ -23,7 +23,7 @@ public class SimpleHttpServer {
         throw new IllegalArgumentException("Can not instantiate SimpleHttpServer.");
     }
 
-    public static void run(ServerSidedPackHandler handler) {
+    public static void run(ServerSidedPackHandler handler, final String password) {
         EventLoopGroup masterGroup = new NioEventLoopGroup(1, (Runnable r) -> newDaemonThread("ServerPack Locator Master - ", r));
         EventLoopGroup slaveGroup = new NioEventLoopGroup(1, (Runnable r) -> newDaemonThread("ServerPack Locator Slave - ", r));
 
@@ -47,7 +47,7 @@ public class SimpleHttpServer {
                     protected void initChannel(final SocketChannel ch) {
                         ch.pipeline().addLast("codec", new HttpServerCodec());
                         ch.pipeline().addLast("aggregator", new HttpObjectAggregator(2 << 19));
-                        ch.pipeline().addLast("request", new RequestHandler(handler));
+                        ch.pipeline().addLast("request", new RequestHandler(handler, password));
                     }
                 })
                 .option(ChannelOption.SO_BACKLOG, 128)

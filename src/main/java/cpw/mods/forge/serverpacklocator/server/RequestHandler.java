@@ -8,18 +8,40 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.plexus.util.Base64;
 
 import javax.net.ssl.SSLException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 import java.util.Objects;
 
 class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private final ServerSidedPackHandler serverSidedPackHandler;
     private static final Logger LOGGER = LogManager.getLogger();
+    private final String passwordHash;
 
-    RequestHandler(final ServerSidedPackHandler serverSidedPackHandler) {
+    RequestHandler(final ServerSidedPackHandler serverSidedPackHandler, final String password) {
         this.serverSidedPackHandler = serverSidedPackHandler;
+
+        try
+        {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(password.getBytes());
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(Integer.toHexString(b & 0xff));
+            }
+            String base64 = new String(Base64.encodeBase64(sb.toString().getBytes()));
+            this.passwordHash = base64.toUpperCase(Locale.ROOT);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new IllegalStateException("Missing MD5 hashing algorithm", e);
+        }
     }
 
     @Override
@@ -31,14 +53,14 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         }
     }
     private void handleGet(final ChannelHandlerContext ctx, final FullHttpRequest msg) {
-        if (!msg.headers().contains("player-id")) {
+        if (!msg.headers().contains("Authentication")) {
             LOGGER.warn("Received unauthenticated request.");
             build404(ctx, msg);
             return;
         }
 
-        var playerId = msg.headers().get("player-id");
-        if (!WhitelistValidator.validate(playerId)) {
+        var hash = msg.headers().get("Authentication");
+        if (!hash.equals(this.passwordHash)) {
             LOGGER.warn("Received unauthorized request.");
             build404(ctx, msg);
             return;

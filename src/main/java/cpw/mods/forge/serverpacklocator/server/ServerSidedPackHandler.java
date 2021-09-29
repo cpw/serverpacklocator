@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 public class ServerSidedPackHandler extends SidedPackHandler
@@ -26,8 +27,9 @@ public class ServerSidedPackHandler extends SidedPackHandler
     @Override
     protected boolean validateConfig() {
         final OptionalInt port = getConfig().getOptionalInt("server.port");
+        final Optional<String> password = getConfig().getOptional("server.password");
 
-        if (port.isPresent()) {
+        if (port.isPresent() && password.isPresent()) {
             return true;
         } else {
             LOGGER.fatal("Invalid configuration file found: {}, please delete or correct before trying again", getConfig().getNioPath());
@@ -55,9 +57,7 @@ public class ServerSidedPackHandler extends SidedPackHandler
     @Override
     public void initialize(final IModLocator dirLocator) {
         serverFileManager = new ServerFileManager(this);
-
-        SimpleHttpServer.run(this);
-        WhitelistValidator.setup(getServerModsDir().getParent());
+        SimpleHttpServer.run(this, getConfig().get("server.password"));
     }
 
     public ServerFileManager getFileManager() {
