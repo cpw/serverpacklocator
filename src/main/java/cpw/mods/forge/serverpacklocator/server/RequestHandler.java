@@ -92,7 +92,7 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
             return String.join(" via ", msg.headers().getAll("X-Forwarded-For"));
 
         if (msg.headers().contains("Forwarded-For"))
-            return String.join(" via ", msg.headers().getAll("X-Forwarded-For"));
+            return String.join(" via ", msg.headers().getAll("Forwarded-For"));
 
         return ctx.channel().remoteAddress().toString();
     }
