@@ -18,6 +18,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.LongFunction;
 import java.util.stream.Collectors;
 
 class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -89,10 +90,10 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private String determineClientIp(final ChannelHandlerContext ctx, final FullHttpRequest msg)
     {
         if (msg.headers().contains("X-Forwarded-For"))
-            return String.join(" via ", msg.headers().getAll("X-Forwarded-For"));
+            return String.join(" via ", msg.headers().getAll("X-Forwarded-For")) + " (using Remote Address: " + ctx.channel().remoteAddress().toString() + ")";
 
         if (msg.headers().contains("Forwarded-For"))
-            return String.join(" via ", msg.headers().getAll("Forwarded-For"));
+            return String.join(" via ", msg.headers().getAll("Forwarded-For")) + " (using Remote Address: " + ctx.channel().remoteAddress().toString() + ")";
 
         return ctx.channel().remoteAddress().toString();
     }
