@@ -11,12 +11,14 @@ import org.apache.logging.log4j.Logger;
 import org.codehaus.plexus.util.Base64;
 
 import javax.net.ssl.SSLException;
+import java.net.SocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private final ServerSidedPackHandler serverSidedPackHandler;
@@ -66,7 +68,7 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         }
 
         if (Objects.equals("/servermanifest.json", msg.uri())) {
-            LOGGER.info("Manifest request for client {}", ctx.channel().remoteAddress());
+            LOGGER.info("Manifest request for client {}", determineClientIp(ctx, msg));
             final String s = serverSidedPackHandler.getFileManager().buildManifest();
             buildReply(ctx, msg, HttpResponseStatus.OK, "application/json", s);
         } else if (msg.uri().startsWith("/files/")) {
@@ -82,6 +84,17 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
             LOGGER.debug("Failed to understand message {}", msg);
             build404(ctx, msg);
         }
+    }
+
+    private String determineClientIp(final ChannelHandlerContext ctx, final FullHttpRequest msg)
+    {
+        if (msg.headers().contains("X-Forwarded-For"))
+            return String.join(" via ", msg.headers().getAll("X-Forwarded-For"));
+
+        if (msg.headers().contains("Forwarded-For"))
+            return String.join(" via ", msg.headers().getAll("X-Forwarded-For"));
+
+        return ctx.channel().remoteAddress().toString();
     }
 
     @Override
