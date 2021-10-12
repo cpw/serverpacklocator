@@ -55,7 +55,9 @@ public class SimpleHttpClient {
         }
 
         final Optional<String> remoteServer = packHandler.getConfig().getOptional("client.remoteServer");
-        downloadJob = Executors.newSingleThreadExecutor().submit(() -> remoteServer.map(this::connectAndDownload).orElse(false));
+        downloadJob = Executors.newSingleThreadExecutor().submit(() -> remoteServer
+          .map(server -> server.endsWith("/") ? server.substring(0, server.length() - 1) : server)
+          .map(this::connectAndDownload).orElse(false));
     }
 
     private boolean connectAndDownload(final String server) {
