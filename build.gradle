@@ -170,15 +170,6 @@ publishing {
             }
         }
     }
-    repositories {
-        maven {
-            credentials {
-                username project.properties.cpwMavenUser?:'fake'
-                password project.properties.cpwMavenPassword?:'news'
-            }
-            url "http://files.minecraftforge.net/maven/manage/upload"
-        }
-    }
 
     if (System.getenv().containsKey("LDTTeamJfrogUsername") && System.getenv().containsKey("LDTTeamJfrogPassword")) {
         repositories {
