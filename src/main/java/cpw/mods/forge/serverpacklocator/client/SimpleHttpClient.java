@@ -73,7 +73,7 @@ public class SimpleHttpClient {
     {
         var address = serverHost + "/servermanifest.json";
 
-        LOGGER.debug("Requesting server manifest from: " + serverHost);
+        LOGGER.info("Requesting server manifest from: " + serverHost);
         LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Requesting server manifest from: " + serverHost);
 
         var url = new URL(address);
@@ -99,7 +99,7 @@ public class SimpleHttpClient {
         }
 
         final String nextFile = next.getFileName();
-        LOGGER.debug("Requesting file {}", nextFile);
+        LOGGER.info("Requesting file {}", nextFile);
         LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Requesting file "+nextFile);
         final String requestUri = server + LamdbaExceptionUtils.rethrowFunction((String f) -> URLEncoder.encode(f, StandardCharsets.UTF_8.name()))
           .andThen(s -> s.replaceAll("\\+", "%20"))
@@ -130,7 +130,7 @@ public class SimpleHttpClient {
 
                 percent = (int) ((double) length / ((double) totalBytes == 0.0 ? 1.0 : (double) totalBytes) * 100.0);
 
-                LOGGER.debug("Downloaded {}% of {}", percent, nextFile);
+                LOGGER.info("Downloaded {}% of {}", percent, nextFile);
                 LaunchEnvironmentHandler.INSTANCE.addProgressMessage("Downloaded " + percent + "% of " + nextFile);
 
                 time = System.nanoTime();
@@ -148,7 +148,7 @@ public class SimpleHttpClient {
         if (fileDataIterator.hasNext()) {
             downloadFile(server, fileDataIterator.next());
         } else {
-            LOGGER.debug("Finished downloading closing channel");
+            LOGGER.info("Finished downloading closing channel");
         }
     }
 

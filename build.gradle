@@ -58,7 +58,9 @@ ext.sharedManifest = manifest {
     ],
     )
     attributes(
-            ["Specification-Title"     : "serverpacklocator",
+            [
+             "Automatic-Module-Name"   : "serverpacklocator",
+             "Specification-Title"     : "serverpacklocator",
              "Specification-Vendor"    : "cpw",
              "Specification-Version"   : "1", // Currently version 3 of the forgespi specification
              "Implementation-Title"    : project.name,
@@ -175,6 +177,19 @@ publishing {
                 password project.properties.cpwMavenPassword?:'news'
             }
             url "http://files.minecraftforge.net/maven/manage/upload"
+        }
+    }
+
+    if (System.getenv().containsKey("LDTTeamJfrogUsername") && System.getenv().containsKey("LDTTeamJfrogPassword")) {
+        repositories {
+            maven {
+                name 'LDTTeamJfrog'
+                credentials {
+                    username System.getenv().get("LDTTeamJfrogUsername")
+                    password System.getenv().get("LDTTeamJfrogPassword")
+                }
+                url 'https://ldtteam.jfrog.io/ldtteam/mods-maven'
+            }
         }
     }
 }
