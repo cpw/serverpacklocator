@@ -49,7 +49,7 @@ test {
     useJUnitPlatform()
 }
 
-ext.forge_version = "37.0.71"
+ext.forge_version = "39.0.20"
 
 ext.sharedManifest = manifest {
     attributes(['Class-Path': 'forge.jar',
@@ -88,7 +88,7 @@ dependencies {
     implementation("net.minecraftforge:forgespi:4.0.9")
     implementation("cpw.mods:modlauncher:9.0.7")
     implementation("com.google.code.gson:gson:2.8.0")
-    implementation("org.apache.logging.log4j:log4j-api:2.11.2")
+    implementation("org.apache.logging.log4j:log4j-api:2.17.0")
     implementation("io.netty:netty-all:4.1.25.Final")
     implementation("com.electronwill.night-config:core:3.6.0")
     implementation("com.electronwill.night-config:toml:3.6.0")

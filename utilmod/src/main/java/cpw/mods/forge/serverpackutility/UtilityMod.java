@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import net.minecraft.client.gui.screens.TitleScreen;
-import net.minecraftforge.client.event.GuiScreenEvent.DrawScreenEvent.Pre;
+import net.minecraftforge.client.event.ScreenEvent.DrawScreenEvent.Pre;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -34,7 +34,7 @@ public class UtilityMod {
         MinecraftForge.EVENT_BUS.addListener(UtilityMod.Wrapper::onShowGui);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static class Wrapper {
         private static boolean brandingHacked = false;
         private static final Supplier<String> statusMessage;
@@ -43,17 +43,16 @@ public class UtilityMod {
         private Wrapper() {
         }
 
+        @SuppressWarnings("rawtypes")
         static void onShowGui(Pre event) {
             if (!brandingHacked) {
-                if (event.getGui() instanceof TitleScreen) {
+                if (event.getScreen() instanceof TitleScreen) {
                     List<String> branding = (List<String>) LamdbaExceptionUtils.uncheck(() -> (List)brandingList.get(null));
                     if (branding != null) {
                         Builder<String> brd = ImmutableList.builder();
                         brd.addAll(branding);
-                        brd.add((String)statusMessage.get());
-                        LamdbaExceptionUtils.uncheck(() -> {
-                            brandingList.set((Object)null, brd.build());
-                        });
+                        brd.add(statusMessage.get());
+                        LamdbaExceptionUtils.uncheck(() -> brandingList.set(null, brd.build()));
                         brandingHacked = true;
                     }
 
@@ -62,30 +61,18 @@ public class UtilityMod {
         }
 
         static {
-            Class<?> brdControl = (Class)LamdbaExceptionUtils.uncheck(() -> {
-                return Class.forName("net.minecraftforge.fmllegacy.BrandingControl", true, Thread.currentThread().getContextClassLoader());
-            });
-            brandingList = (Field)LamdbaExceptionUtils.uncheck(() -> {
-                return brdControl.getDeclaredField("overCopyrightBrandings");
-            });
+            Class<?> brdControl = LamdbaExceptionUtils.uncheck(() -> Class.forName("net.minecraftforge.internal.BrandingControl", true, Thread.currentThread().getContextClassLoader()));
+            brandingList = LamdbaExceptionUtils.uncheck(() -> brdControl.getDeclaredField("overCopyrightBrandings"));
             brandingList.setAccessible(true);
 
             Supplier statMessage;
             try {
                 Optional<ClassLoader> classLoader = Launcher.INSTANCE.environment().getProperty((Key)Keys.LOCATORCLASSLOADER.get());
-                Class<?> clz = (Class)LamdbaExceptionUtils.uncheck(() -> {
-                    return Class.forName("cpw.mods.forge.serverpacklocator.ModAccessor", true, (ClassLoader)classLoader.orElse(Thread.currentThread().getContextClassLoader()));
-                });
-                Method status = (Method)LamdbaExceptionUtils.uncheck(() -> {
-                    return clz.getMethod("status");
-                });
-                statMessage = (Supplier)LamdbaExceptionUtils.uncheck(() -> {
-                    return (Supplier)status.invoke((Object)null);
-                });
+                Class<?> clz = LamdbaExceptionUtils.uncheck(() -> Class.forName("cpw.mods.forge.serverpacklocator.ModAccessor", true, classLoader.orElse(Thread.currentThread().getContextClassLoader())));
+                Method status = LamdbaExceptionUtils.uncheck(() -> clz.getMethod("status"));
+                statMessage = LamdbaExceptionUtils.uncheck(() -> (Supplier)status.invoke(null));
             } catch (Throwable var5) {
-                statMessage = () -> {
-                    return "ServerPack: FAILED TO LOAD";
-                };
+                statMessage = () -> "ServerPack: FAILED TO LOAD";
             }
 
             statusMessage = statMessage;
