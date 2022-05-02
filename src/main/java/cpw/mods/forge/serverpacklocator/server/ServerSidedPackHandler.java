@@ -10,10 +10,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalInt;
+import java.util.*;
 
 public class ServerSidedPackHandler extends SidedPackHandler
 {
@@ -56,7 +53,7 @@ public class ServerSidedPackHandler extends SidedPackHandler
 
     @Override
     public void initialize(final IModLocator dirLocator) {
-        serverFileManager = new ServerFileManager(this);
+        serverFileManager = new ServerFileManager(this, getConfig().<List<String>>getOptional("server.excludedModIds").orElse(Collections.emptyList()));
         SimpleHttpServer.run(this, getConfig().get("server.password"));
     }
 

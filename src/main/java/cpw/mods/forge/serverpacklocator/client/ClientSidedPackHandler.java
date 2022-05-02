@@ -12,10 +12,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -45,13 +42,19 @@ public class ClientSidedPackHandler extends SidedPackHandler {
         final Optional<String> remoteServer = getConfig().getOptional("client.remoteServer");
         final Optional<String> password = getConfig().getOptional("client.password");
 
-        if (remoteServer.isPresent()) {
-            return true;
-        } else {
-            LOGGER.fatal("Invalid configuration file {} found. Could not locate valid values. " +
+        if (remoteServer.isEmpty()) {
+            LOGGER.fatal("Invalid configuration file {} found. Could not locate remove server address. " +
                     "Repair or delete this file to continue", getConfig().getNioPath().toString());
             throw new IllegalStateException("Invalid configuation file found, please delete or correct");
         }
+
+        if (password.isEmpty()) {
+            LOGGER.fatal("Invalid configuration file {} found. Could not locate server password. " +
+                           "Repair or delete this file to continue", getConfig().getNioPath().toString());
+            throw new IllegalStateException("Invalid configuration file found, please delete or correct");
+        }
+
+        return true;
     }
 
     @Override
@@ -83,6 +86,10 @@ public class ClientSidedPackHandler extends SidedPackHandler {
 
     @Override
     public void initialize(final IModLocator dirLocator) {
-        clientDownloader = new SimpleHttpClient(this, getConfig().get("client.password"));
+        clientDownloader = new SimpleHttpClient(
+          this,
+          getConfig().get("client.password"),
+          getConfig().<List<String>>getOptional("client.excludedModIds").orElse(Collections.emptyList())
+          );
     }
 }

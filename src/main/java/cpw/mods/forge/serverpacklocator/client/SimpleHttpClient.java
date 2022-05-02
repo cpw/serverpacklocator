@@ -19,10 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -33,10 +30,12 @@ public class SimpleHttpClient {
     private ServerManifest serverManifest;
     private Iterator<ServerManifest.ModFileData> fileDownloaderIterator;
     private final Future<Boolean> downloadJob;
-    private final String          passwordHash;
+    private final String       passwordHash;
+    private final List<String> excludedModIds;
 
-    public SimpleHttpClient(final ClientSidedPackHandler packHandler, final String password) {
+    public SimpleHttpClient(final ClientSidedPackHandler packHandler, final String password, final List<String> excludedModIds) {
         this.outputDir = packHandler.getServerModsDir();
+        this.excludedModIds = excludedModIds;
 
         try
         {
@@ -155,7 +154,18 @@ public class SimpleHttpClient {
     }
 
     private void buildFileFetcher() {
-        fileDownloaderIterator = serverManifest.getFiles().iterator();
+        if (this.excludedModIds.isEmpty())
+        {
+            fileDownloaderIterator = serverManifest.getFiles().iterator();
+        }
+        else
+        {
+            fileDownloaderIterator = serverManifest.getFiles()
+                                   .stream()
+                                   .filter(modFileData -> !this.excludedModIds.contains(modFileData.getRootModId()))
+                                   .iterator();
+        }
+
     }
 
     boolean waitForResult() throws ExecutionException {

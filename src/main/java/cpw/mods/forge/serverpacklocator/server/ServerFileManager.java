@@ -25,9 +25,11 @@ public class ServerFileManager {
     private List<IModFile> modList;
     private final Path manifestFile;
     private final ServerSidedPackHandler serverSidedPackHandler;
+    private final List<String> excludedModIds;
 
-    ServerFileManager(ServerSidedPackHandler packHandler) {
+    ServerFileManager(ServerSidedPackHandler packHandler, final List<String> excludedModIds) {
         modsDir = packHandler.getServerModsDir();
+        this.excludedModIds = excludedModIds;
         manifestFile = modsDir.resolve("servermanifest.json");
         this.serverSidedPackHandler = packHandler;
     }
@@ -95,18 +97,19 @@ public class ServerFileManager {
                 .filter(mf -> !"serverpackutility.jar".equals(mf.getFileName()))
                 .collect(Collectors.groupingBy(mf -> getModInfos(mf).get(0).getModId()));
         final List<IModFile> nonModFiles = modList.stream()
-                .filter(mf -> mf.getType() != IModFile.Type.MOD)
-                .collect(Collectors.toList());
+          .filter(mf -> mf.getType() != IModFile.Type.MOD).toList();
 
         final ServerManifest manifest = new ServerManifest();
         final List<ServerManifest.ModFileData> nonModFileData = nonModFiles
                 .stream()
                 .map(ServerManifest.ModFileData::new)
+                .filter(modInfo -> !this.excludedModIds.contains(modInfo.getRootModId()))
                 .collect(Collectors.toList());
         manifest.addAll(nonModFileData);
         final List<ServerManifest.ModFileData> modFileDataList = filesbyfirstId.entrySet().stream()
                 .map(this::selectNewest)
                 .map(ServerManifest.ModFileData::new)
+                .filter(modInfo -> !this.excludedModIds.contains(modInfo.getRootModId()))
                 .collect(Collectors.toList());
         manifest.addAll(modFileDataList);
         manifest.setForgeVersion(LamdbaExceptionUtils.uncheck(this::getForgeVersion));
