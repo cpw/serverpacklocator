@@ -1,5 +1,16 @@
 # Server Pack Locator
 
+# 2022 Update!
+
+With the advent of the microsoft account, this project will move away from using custom SSL behaviours
+and instead rely on standard OAuth/OIDC type mechanisms instead. There will be a requirement to
+create an Azure application for MS IDM integration, but that seems like a small price for a significant
+benefit.
+
+Watch this space.
+
+### Legacy readme below
+
 One of a series of locator modules to allow Forge to find mods in different places.
 
 This locator allows a properly configured client to retrieve mods from a properly configured server,
