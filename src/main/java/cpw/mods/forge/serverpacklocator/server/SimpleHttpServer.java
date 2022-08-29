@@ -1,5 +1,6 @@
 package cpw.mods.forge.serverpacklocator.server;
 
+import cpw.mods.forge.serverpacklocator.secure.ProfileKeyPairBasedSecurityManager;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -47,7 +48,7 @@ public class SimpleHttpServer {
                     protected void initChannel(final SocketChannel ch) {
                         ch.pipeline().addLast("codec", new HttpServerCodec());
                         ch.pipeline().addLast("aggregator", new HttpObjectAggregator(2 << 19));
-                        ch.pipeline().addLast("request", new RequestHandler(handler, password));
+                        ch.pipeline().addLast("request", new RequestHandler(handler, ProfileKeyPairBasedSecurityManager.getInstance()));
                     }
                 })
                 .option(ChannelOption.SO_BACKLOG, 128)

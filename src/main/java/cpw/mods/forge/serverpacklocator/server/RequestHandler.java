@@ -1,5 +1,6 @@
 package cpw.mods.forge.serverpacklocator.server;
 
+import cpw.mods.forge.serverpacklocator.secure.IConnectionSecurityManager;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -8,42 +9,23 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.codehaus.plexus.util.Base64;
 
 import javax.net.ssl.SSLException;
-import java.net.SocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.function.LongFunction;
-import java.util.stream.Collectors;
 
 class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private final ServerSidedPackHandler serverSidedPackHandler;
     private static final Logger LOGGER = LogManager.getLogger();
-    private final String passwordHash;
+    private final IConnectionSecurityManager connectionSecurityManager;
 
-    RequestHandler(final ServerSidedPackHandler serverSidedPackHandler, final String password) {
+    RequestHandler(final ServerSidedPackHandler serverSidedPackHandler,final IConnectionSecurityManager connectionSecurityManager) {
         this.serverSidedPackHandler = serverSidedPackHandler;
-
-        try
-        {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(password.getBytes());
-            byte[] digest = md.digest();
-            StringBuilder sb = new StringBuilder();
-            for (byte b : digest) {
-                sb.append(Integer.toHexString(b & 0xff));
-            }
-            this.passwordHash = sb.toString().toUpperCase(Locale.ROOT);
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new IllegalStateException("Missing MD5 hashing algorithm", e);
-        }
+        this.connectionSecurityManager = connectionSecurityManager;
     }
 
     @Override
@@ -61,8 +43,7 @@ class RequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
             return;
         }
 
-        var hash = msg.headers().get("Authentication");
-        if (!hash.equals(this.passwordHash)) {
+        if (!this.connectionSecurityManager.onServerConnectionRequest(msg)) {
             LOGGER.warn("Received unauthorized request.");
             build404(ctx, msg);
             return;

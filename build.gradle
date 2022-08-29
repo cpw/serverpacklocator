@@ -1,23 +1,28 @@
 plugins {
-    id 'org.ajoberstar.reckon' version '0.11.0'
-    id 'org.ajoberstar.grgit' version '3.1.1'
-    id 'com.github.ben-manes.versions' version '0.22.0'
+    id 'maven-publish'
+    id 'java'
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'jacoco'
+    id 'net.minecraftforge.gradleutils'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
-apply plugin: 'maven-publish'
-apply plugin: 'jacoco'
-apply plugin: 'java-library'
-
-group 'cpw.mods.forge'
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(16)
+group = 'cpw.mods.forge'
+version = gradleutils.getTagOffsetBranchVersion()
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 repositories {
     mavenCentral()
     mavenLocal()
     maven {
         name = "forge"
-        url = "https://files.minecraftforge.net/maven"
+        url = "https://maven.minecraftforge.net/"
+    }
+    maven {
+        name = "mojang"
+        url = "https://libraries.minecraft.net/"
     }
 }
 
@@ -25,108 +30,91 @@ jacoco {
     toolVersion = "0.8.2"
 }
 
-reckon {
-    scopeFromProp()
-    stageFromProp('ms', 'final')
-}
-
-reckonTagCreate.dependsOn check
-
-dependencyUpdates.resolutionStrategy {
-    componentSelection { rules ->
-        rules.all { ComponentSelection selection ->
-            boolean rejected = ['alpha', 'beta', 'rc', 'cr', 'm', 'preview'].any { qualifier ->
-                selection.candidate.version ==~ /(?i).*[.-]${qualifier}[.\d-]*/
-            }
-            if (rejected) {
-                selection.reject('Release candidate')
-            }
-        }
-    }
-}
-
 test {
     useJUnitPlatform()
 }
 
-ext.forge_version = "39.0.20"
-
-ext.sharedManifest = manifest {
-    attributes(['Class-Path': 'forge.jar',
-     'Main-Class': 'net.minecraftforge.server.ServerMain',
-     'ServerLaunchArgs': "--gameDir . --launchTarget fmlserver --fml.forgeVersion ${forge_version} --fml.mcpVersion 20210706.113038 --fml.mcVersion 1.17.1 --fml.forgeGroup net.minecraftforge"
-    ],
-    )
-    attributes(
-            [
-             "Automatic-Module-Name"   : "serverpacklocator",
-             "Specification-Title"     : "serverpacklocator",
-             "Specification-Vendor"    : "cpw",
-             "Specification-Version"   : "1", // Currently version 3 of the forgespi specification
-             "Implementation-Title"    : project.name,
-             "Implementation-Version"  : "${version}+${System.getenv("BUILD_NUMBER") ?: 0}+${grgit.head().abbreviatedId}",
-             "Implementation-Vendor"   : "cpw",
-             "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-             "Git-Commit"              : grgit.head().abbreviatedId,
-             "Git-Branch"              : grgit.branch.current().getName()],
-            "cpw/mods/forge/serverpacklocator/")
+jar {
+    manifest {
+        attributes([
+                'Specification-Title':      project.name,
+                'Specification-Vendor':     'CPW',
+                'Specification-Version':    project.version,
+                'Implementation-Title':     project.name,
+                'Implementation-Version':   project.version,
+                'Implementation-Vendor':    'CPW',
+                'Automatic-Module-Name':    'serverpacklocator',
+        ] as LinkedHashMap)
+    }
 }
 
-jar {
-    manifest = project.manifest {
-        from sharedManifest
+project(':Mod').afterEvaluate {
+    tasks.distributionJar {
+        from (project(':Mod').tasks.jar.outputs.files) {
+            into 'utilmod'
+        }
+
+    }
+}
+
+shadowJar {
+    archiveClassifier = 'all-without-utility-mod'
+    configurations = [project.configurations.shadow]
+    relocate 'io.netty', 'shadow.io.netty'
+    manifest {
+        attributes([
+                'Specification-Title':      project.name,
+                'Specification-Vendor':     'CPW',
+                'Specification-Version':    project.version,
+                'Implementation-Title':     project.name,
+                'Implementation-Version':   project.version,
+                'Implementation-Vendor':    'CPW',
+                'Automatic-Module-Name':    'serverpacklocator',
+        ] as LinkedHashMap)
+    }
+}
+
+task distributionJar(type: Jar) {
+    archiveClassifier = 'all'
+    dependsOn shadowJar
+    from project.zipTree(tasks.shadowJar.archiveFile)
+    manifest {
+        attributes([
+                'Specification-Title':      project.name,
+                'Specification-Vendor':     'CPW',
+                'Specification-Version':    project.version,
+                'Implementation-Title':     project.name,
+                'Implementation-Version':   project.version,
+                'Implementation-Vendor':    'CPW',
+                'Automatic-Module-Name':    'serverpacklocator',
+        ] as LinkedHashMap)
     }
 }
 
 task sourcesJar(type: Jar) {
-    archiveClassifier = 'sources'
+    getArchiveClassifier().set('sources')
     from sourceSets.main.allSource
 }
 
 
 dependencies {
-    implementation("net.minecraftforge:forgespi:4.0.9")
-    implementation("cpw.mods:modlauncher:9.0.7")
+    implementation("net.minecraftforge:forgespi:6.0.2")
+    implementation("cpw.mods:modlauncher:10.0.8")
     implementation("com.google.code.gson:gson:2.8.0")
+    implementation("com.mojang:authlib:3.11.49")
     implementation("org.apache.logging.log4j:log4j-api:2.17.0")
-    implementation("io.netty:netty-all:4.1.25.Final")
+    shadow("io.netty:netty-all:4.1.25.Final")
     implementation("com.electronwill.night-config:core:3.6.0")
     implementation("com.electronwill.night-config:toml:3.6.0")
     implementation("org.apache.maven:maven-artifact:3.6.3")
     testImplementation("org.junit.jupiter:junit-jupiter:5.4.2")
 }
 
-task allzips dependsOn('zip', 'serverzip')
-
-task zip(type: Zip, dependsOn: jar) {
-    archiveClassifier = "bundle"
-    from (jar.outputs) { into ("libraries/cpw/mods/forge/serverpacklocator/${project.version}/") }
-    from (file("1.14.4-serverpacklocator.json")) {
-        filter { line -> line
-                .replace('@version@', "${project.version}")
-                .replace('@forgeversion@', "${forge_version}")
-        }
-        into ("versions/1.14.4-serverpacklocator/")
-    }
-}
-
-task serverzip(type: Zip, dependsOn: jar) {
-    archiveClassifier = "serverbundle"
-    from (jar.outputs) {
-        into ("/")
-    }
-    from (files("signcertificate.sh", "runserver.sh")) {
-        filter { line -> line
-                .replace('@version@', "${project.version}")
-                .replace('@forgeversion@', "${forge_version}")
-        }
-        into("/")
-    }
-}
 artifacts {
-    archives zip
     archives jar
+    archives shadowJar
     archives sourcesJar
+    archives distributionJar
 }
 
 compileJava {
@@ -137,9 +125,19 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-            artifact sourcesJar
-            artifact zip
-            artifact serverzip
+
+            artifact sourcesJar {
+                classifier "sources"
+            }
+
+            artifact shadowJar {
+                classifier 'all-without-utility-mod'
+            }
+
+            artifact distributionJar {
+                classifier 'all'
+            }
+
             pom {
                 name = 'Server Pack Mod Locator'
                 description = 'Server Pack Mod Locator'
@@ -184,3 +182,9 @@ publishing {
         }
     }
 }
+
+changelog {
+    fromTag '6.0.0'
+}
+
+tasks.assemble.dependsOn tasks.distributionJar

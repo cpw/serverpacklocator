@@ -4,7 +4,9 @@ import com.electronwill.nightconfig.core.ConfigFormat;
 import cpw.mods.forge.serverpacklocator.LaunchEnvironmentHandler;
 import cpw.mods.forge.serverpacklocator.ServerManifest;
 import cpw.mods.forge.serverpacklocator.SidedPackHandler;
-import net.minecraftforge.forgespi.locating.IModFile;
+import cpw.mods.forge.serverpacklocator.secure.ConnectionSecurityManager;
+import cpw.mods.forge.serverpacklocator.secure.IConnectionSecurityManager;
+import cpw.mods.forge.serverpacklocator.secure.ProfileKeyPairBasedSecurityManager;
 import net.minecraftforge.forgespi.locating.IModLocator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,7 +14,11 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -40,7 +46,6 @@ public class ClientSidedPackHandler extends SidedPackHandler {
             return false;
         }
         final Optional<String> remoteServer = getConfig().getOptional("client.remoteServer");
-        final Optional<String> password = getConfig().getOptional("client.password");
 
         if (remoteServer.isEmpty()) {
             LOGGER.fatal("Invalid configuration file {} found. Could not locate remove server address. " +
@@ -48,23 +53,21 @@ public class ClientSidedPackHandler extends SidedPackHandler {
             throw new IllegalStateException("Invalid configuation file found, please delete or correct");
         }
 
-        if (password.isEmpty()) {
-            LOGGER.fatal("Invalid configuration file {} found. Could not locate server password. " +
-                           "Repair or delete this file to continue", getConfig().getNioPath().toString());
-            throw new IllegalStateException("Invalid configuration file found, please delete or correct");
-        }
+        ConnectionSecurityManager.getInstance().validateConfiguration(getConfig());
 
         return true;
     }
 
     @Override
-    protected List<IModFile> processModList(List<IModFile> scannedMods) {
+    protected List<IModLocator.ModFileOrException> processModList(List<IModLocator.ModFileOrException> scannedMods) {
         final Set<String> manifestFileList = clientDownloader.getManifest().getFiles()
                 .stream()
                 .map(ServerManifest.ModFileData::getFileName)
                 .collect(Collectors.toSet());
+
         return scannedMods.stream()
-                .filter(f-> manifestFileList.contains(f.getFileName()))
+                .filter(moe -> moe.file() != null)
+                .filter(f-> manifestFileList.contains(f.file().getFileName()))
                 .collect(Collectors.toList());
     }
 
@@ -86,10 +89,10 @@ public class ClientSidedPackHandler extends SidedPackHandler {
 
     @Override
     public void initialize(final IModLocator dirLocator) {
+        final IConnectionSecurityManager connectionSecurityManager = ConnectionSecurityManager.getInstance().initialize(getConfig());
         clientDownloader = new SimpleHttpClient(
-          this,
-          getConfig().get("client.password"),
-          getConfig().<List<String>>getOptional("client.excludedModIds").orElse(Collections.emptyList())
-          );
+          this, connectionSecurityManager,
+           getConfig().<List<String>>getOptional("client.excludedModIds").orElse(Collections.emptyList())
+        );
     }
 }

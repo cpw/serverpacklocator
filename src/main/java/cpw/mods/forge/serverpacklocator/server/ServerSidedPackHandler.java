@@ -2,7 +2,8 @@ package cpw.mods.forge.serverpacklocator.server;
 
 import com.electronwill.nightconfig.core.ConfigFormat;
 import cpw.mods.forge.serverpacklocator.SidedPackHandler;
-import net.minecraftforge.forgespi.locating.IModFile;
+import cpw.mods.forge.serverpacklocator.secure.ConnectionSecurityManager;
+import cpw.mods.forge.serverpacklocator.secure.WhitelistVerificationHelper;
 import net.minecraftforge.forgespi.locating.IModLocator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,7 +11,11 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 public class ServerSidedPackHandler extends SidedPackHandler
 {
@@ -19,6 +24,7 @@ public class ServerSidedPackHandler extends SidedPackHandler
 
     public ServerSidedPackHandler(final Path serverModsDir) {
         super(serverModsDir);
+        WhitelistVerificationHelper.getInstance().setup(serverModsDir);
     }
 
     @Override
@@ -26,12 +32,15 @@ public class ServerSidedPackHandler extends SidedPackHandler
         final OptionalInt port = getConfig().getOptionalInt("server.port");
         final Optional<String> password = getConfig().getOptional("server.password");
 
-        if (port.isPresent() && password.isPresent()) {
-            return true;
-        } else {
+        if (port.isEmpty() || password.isEmpty())
+        {
             LOGGER.fatal("Invalid configuration file found: {}, please delete or correct before trying again", getConfig().getNioPath());
             throw new IllegalStateException("Invalid configuation found");
         }
+
+        ConnectionSecurityManager.getInstance().validateConfiguration(getConfig());
+
+        return true;
     }
 
     @Override
@@ -46,7 +55,7 @@ public class ServerSidedPackHandler extends SidedPackHandler
     }
 
     @Override
-    protected List<IModFile> processModList(List<IModFile> scannedMods) {
+    protected List<IModLocator.ModFileOrException> processModList(List<IModLocator.ModFileOrException> scannedMods) {
         serverFileManager.parseModList(scannedMods);
         return serverFileManager.getModList();
     }

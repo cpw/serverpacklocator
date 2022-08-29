@@ -2,7 +2,6 @@ package cpw.mods.forge.serverpacklocator;
 
 import com.electronwill.nightconfig.core.ConfigFormat;
 import com.electronwill.nightconfig.core.file.FileConfig;
-import net.minecraftforge.forgespi.locating.IModFile;
 import net.minecraftforge.forgespi.locating.IModLocator;
 
 import java.io.IOException;
@@ -44,7 +43,7 @@ public abstract class SidedPackHandler {
         return isValid;
     }
 
-    protected abstract List<IModFile> processModList(final List<IModFile> scannedMods);
+    protected abstract List<IModLocator.ModFileOrException> processModList(final List<IModLocator.ModFileOrException> scannedMods);
 
     public abstract void initialize(final IModLocator dirLocator);
 

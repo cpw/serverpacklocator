@@ -1,2 +1,17 @@
-rootProject.name = 'serverpacklocator'
+import org.gradle.plugin.use.internal.DefaultPluginId
 
+pluginManagement.repositories.mavenLocal()
+pluginManagement.repositories.maven { url = 'https://maven.minecraftforge.net' }
+pluginManagement.repositories.maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+pluginManagement.repositories.maven { url = 'https://maven.parchmentmc.org' }
+pluginManagement.repositories.mavenCentral()
+
+pluginManagement.resolutionStrategy.setDefaultPluginVersion(DefaultPluginId.of("net.minecraftforge.gradle"), "5.1.+")
+pluginManagement.resolutionStrategy.setDefaultPluginVersion(DefaultPluginId.of("net.minecraftforge.gradleutils"), "2.+")
+pluginManagement.resolutionStrategy.setDefaultPluginVersion(DefaultPluginId.of("org.parchmentmc.librarian.forgegradle"), "1.+")
+
+rootProject.name = 'SPL'
+
+include 'Mod'
+
+project(':Mod').projectDir = file('utilmod')
