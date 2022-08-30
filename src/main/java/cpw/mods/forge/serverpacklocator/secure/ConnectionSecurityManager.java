@@ -30,13 +30,24 @@ public final class ConnectionSecurityManager
 
     public void validateConfiguration(final FileConfig config)
     {
-        final String securityType = config.get("security.type");
-        securityManagers.get(securityType).validateConfiguration(config);
+        final Optional<String> securityType = config.getOptional("security.type");
+        if (securityType.isEmpty()) {
+            LOGGER.fatal("Invalid configuration file {} found. Could not locate security type. " +
+                                 "Repair or delete this file to continue", config.getNioPath().toString());
+            throw new IllegalStateException("Invalid configuration file found, please delete or correct");
+        }
+        if (!securityManagers.containsKey(securityType.get())) {
+            LOGGER.fatal("Invalid configuration file {} found. Unknown security type: {}. " +
+                                 "Repair or delete this file to continue", config.getNioPath().toString(), securityType.get());
+            throw new IllegalStateException("Invalid configuration file found, please delete or correct");
+        }
+
+        securityManagers.get(securityType.get()).validateConfiguration(config);
     }
 
     public IConnectionSecurityManager initialize(final FileConfig config) {
-        final Optional<String> securityType = config.getOptional("security.type");
-        final IConnectionSecurityManager connectionSecurityManager = securityManagers.get(securityType.orElseThrow());
+        final String securityType = config.get("security.type");
+        final IConnectionSecurityManager connectionSecurityManager = securityManagers.get(securityType);
         connectionSecurityManager.initialize(config);
         return connectionSecurityManager;
     }

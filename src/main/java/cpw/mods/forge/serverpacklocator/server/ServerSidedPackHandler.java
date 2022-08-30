@@ -30,9 +30,8 @@ public class ServerSidedPackHandler extends SidedPackHandler
     @Override
     protected boolean validateConfig() {
         final OptionalInt port = getConfig().getOptionalInt("server.port");
-        final Optional<String> password = getConfig().getOptional("server.password");
 
-        if (port.isEmpty() || password.isEmpty())
+        if (port.isEmpty())
         {
             LOGGER.fatal("Invalid configuration file found: {}, please delete or correct before trying again", getConfig().getNioPath());
             throw new IllegalStateException("Invalid configuation found");

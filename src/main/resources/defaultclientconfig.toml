@@ -5,4 +5,4 @@ remoteServer = "https://localhost:8080/"
 # The type of security that the remote server uses, for now supported are: publickey (default), password. If password is used, please set the server password below.
 type="publickey"
 # The server password: Change to the password you received from the server owner
-password = "!!CHANGEME!!"
+password = "!!CHANGEME_WHEN_USING_PASSWORD_MODE!!"
