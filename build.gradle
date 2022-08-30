@@ -130,10 +130,6 @@ publishing {
                 classifier "sources"
             }
 
-            artifact shadowJar {
-                classifier 'all-without-utility-mod'
-            }
-
             artifact distributionJar {
                 classifier 'all'
             }
