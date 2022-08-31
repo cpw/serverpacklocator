@@ -39,8 +39,15 @@ public final class WhitelistVerificationHelper
         final Path whitelistJsonFile = serverModsDirPath.getParent().resolve("whitelist.json");
         final Path serverPropertiesFile = serverModsDirPath.getParent().resolve("server.properties");
 
+        LOGGER.warn("Starting whitelist verification helper");
+        LOGGER.warn("  + Whitelist file:         {}", whitelistJsonFile.toString());
+        LOGGER.warn("  + Server properties file: {}", serverPropertiesFile.toString());
+
         FileWatchdogThread.watching(whitelistJsonFile, this::onWhitelistChange);
         FileWatchdogThread.watching(serverPropertiesFile, this::onServerPropertiesChange);
+
+        onWhitelistChange(whitelistJsonFile);
+        onServerPropertiesChange(serverPropertiesFile);
     }
 
     public boolean isAllowed(final UUID sessionId) {
@@ -49,10 +56,20 @@ public final class WhitelistVerificationHelper
 
     private void onWhitelistChange(final Path path)
     {
+        if (Files.exists(path))
+            return;
+
+        LOGGER.info("Reloading whitelist file: {}", path.toString());
+
         try
         {
             final JsonArray array = GSON.fromJson(Files.newBufferedReader(path), JsonArray.class);
             allowedSessionIds.clear();
+
+            if (array == null) {
+                LOGGER.warn("Whitelist file is empty, clearing allowed sessions and aborting refresh! Whitelist file: {}", path.toString());
+                return;
+            }
             for (int i = 0; i < array.size(); i++)
             {
                 final JsonObject obj = array.get(i).getAsJsonObject();
@@ -68,6 +85,8 @@ public final class WhitelistVerificationHelper
 
     private void onServerPropertiesChange(final Path path)
     {
+        LOGGER.info("Reloading server properties file: {}", path.toString());
+
         try
         {
             final List<String> lines = Files.readAllLines(path);
