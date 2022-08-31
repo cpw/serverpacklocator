@@ -24,7 +24,6 @@ public abstract class SidedPackHandler {
         packConfig.load();
         packConfig.close();
         this.isValid = validateConfig();
-        ModAccessor.needsCertificate = !this.isValid;
     }
 
     protected abstract boolean validateConfig();
