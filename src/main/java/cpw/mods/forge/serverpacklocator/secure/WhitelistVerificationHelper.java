@@ -36,8 +36,8 @@ public final class WhitelistVerificationHelper
     }
 
     public void setup(final Path serverModsDirPath) {
-        final Path whitelistJsonFile = serverModsDirPath.getParent().resolve("whitelist.json");
-        final Path serverPropertiesFile = serverModsDirPath.getParent().resolve("server.properties");
+        final Path whitelistJsonFile = serverModsDirPath.getParent().resolve("whitelist.json").toAbsolutePath();
+        final Path serverPropertiesFile = serverModsDirPath.getParent().resolve("server.properties").toAbsolutePath();
 
         LOGGER.warn("Starting whitelist verification helper");
         LOGGER.warn("  + Whitelist file:         {}", whitelistJsonFile.toString());
@@ -56,7 +56,7 @@ public final class WhitelistVerificationHelper
 
     private void onWhitelistChange(final Path path)
     {
-        if (Files.exists(path))
+        if (!Files.exists(path))
             return;
 
         LOGGER.info("Reloading whitelist file: {}", path.toString());
@@ -85,6 +85,9 @@ public final class WhitelistVerificationHelper
 
     private void onServerPropertiesChange(final Path path)
     {
+        if (!Files.exists(path))
+            return;
+
         LOGGER.info("Reloading server properties file: {}", path.toString());
 
         try
