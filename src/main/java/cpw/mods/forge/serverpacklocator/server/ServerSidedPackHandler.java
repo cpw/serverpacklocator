@@ -24,7 +24,6 @@ public class ServerSidedPackHandler extends SidedPackHandler
 
     public ServerSidedPackHandler(final Path serverModsDir) {
         super(serverModsDir);
-        WhitelistVerificationHelper.getInstance().setup(serverModsDir);
     }
 
     @Override

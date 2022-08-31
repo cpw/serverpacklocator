@@ -62,7 +62,7 @@ public class PackLocator implements IModLocator
             finalModList.addAll(serverPackLocator.processModList(modFiles));
         }
 
-        ModAccessor.statusLine = "ServerPack: " + (successfulDownload ? "loaded" : "NOT loaded");
+        ModAccessor.setStatusLine("ServerPack: " + (successfulDownload ? "loaded" : "NOT loaded"));
         return finalModList;
     }
 
