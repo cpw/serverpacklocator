@@ -50,8 +50,8 @@ public class UtilityMod {
         try {
             Optional<ClassLoader> classLoader = Launcher.INSTANCE.environment().getProperty((Key)Keys.LOCATORCLASSLOADER.get());
             Class<?> clz = LamdbaExceptionUtils.uncheck(() -> Class.forName("cpw.mods.forge.serverpacklocator.ModAccessor", true, classLoader.orElse(Thread.currentThread().getContextClassLoader())));
-            Method setIsWhiteListed = LamdbaExceptionUtils.uncheck(() -> clz.getMethod("setIsWhiteListed"));
-            Method setIsWhiteListEnabled = LamdbaExceptionUtils.uncheck(() -> clz.getMethod("setIsWhiteListEnabled"));
+            Method setIsWhiteListed = LamdbaExceptionUtils.uncheck(() -> clz.getMethod("setIsWhiteListed", Function.class));
+            Method setIsWhiteListEnabled = LamdbaExceptionUtils.uncheck(() -> clz.getMethod("setIsWhiteListEnabled", Supplier.class));
             LamdbaExceptionUtils.uncheck(() -> setIsWhiteListed.invoke(null, (Function<UUID, CompletableFuture<Boolean>>)(id) -> startedEvent.getServer().submit(() -> {
                 return startedEvent.getServer().getPlayerList().getWhiteList().isWhiteListed(new GameProfile(id, "")); //Name does not matter
             })));
